@@ -76,7 +76,7 @@ body {
     flex: 1;
     max-width: 500px;
     background-color: var(--light-gray);
-    border: 1px solid var(--border-gray);
+    border: 1px solid var(--primary-green);
     border-radius: 25px;
     padding: 10px 18px;
     transition: all 0.3s ease;
@@ -84,7 +84,7 @@ body {
 
 .nav-search:focus-within {
     border-color: var(--primary-green);
-    box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.1);
+    box-shadow: 0 0 0 3px rgba(12, 49, 14, 0.1);
 }
 
 .search-icon {
