@@ -3,6 +3,77 @@ document.addEventListener('DOMContentLoaded', function() {
     const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
     const mobileMenu = document.querySelector('.mobile-menu');
     const navContainer = document.querySelector('.nav-container');
+    
+    // Sidebar elements
+    const sidebar = document.querySelector('.sidebar');
+    const sidebarLinks = document.querySelectorAll('.sidebar-link');
+    const sidebarClose = document.querySelector('.sidebar-close');
+    const sidebarToggle = document.querySelector('.sidebar-toggle');
+
+    // Sidebar toggle button handler
+    if (sidebarToggle) {
+        sidebarToggle.addEventListener('click', function() {
+            openSidebar();
+        });
+    }
+    sidebarLinks.forEach(link => {
+        link.addEventListener('click', function(event) {
+            event.preventDefault();
+            
+            // Remove active class from all links
+            sidebarLinks.forEach(l => l.classList.remove('active'));
+            
+            // Add active class to clicked link
+            this.classList.add('active');
+            
+            console.log('Sidebar link clicked:', this.textContent.trim());
+            // Add your navigation logic here
+            
+            // Close sidebar on mobile after clicking
+            if (window.innerWidth <= 768) {
+                closeSidebar();
+            }
+        });
+    });
+
+    // Function to open sidebar
+    function openSidebar() {
+        sidebar.classList.add('active');
+    }
+
+    // Function to close sidebar
+    function closeSidebar() {
+        sidebar.classList.remove('active');
+    }
+
+    // Sidebar close button handler
+    if (sidebarClose) {
+        sidebarClose.addEventListener('click', closeSidebar);
+    }
+
+    // Close sidebar when clicking outside on mobile
+    document.addEventListener('click', function(event) {
+        const isMobileView = window.innerWidth <= 768;
+        const isClickInsideSidebar = sidebar.contains(event.target);
+        const isClickOnNavBar = navContainer.contains(event.target);
+        
+        if (isMobileView && !isClickInsideSidebar && !isClickOnNavBar && sidebar.classList.contains('active')) {
+            closeSidebar();
+        }
+    });
+
+    // Optional: Add a toggle button for sidebar on mobile (you can add a hamburger icon to navbar)
+    // This allows opening sidebar from navbar if needed
+    window.toggleSidebar = function() {
+        sidebar.classList.toggle('active');
+    };
+
+    // Close sidebar on Escape key
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape' && sidebar.classList.contains('active')) {
+            closeSidebar();
+        }
+    });
 
     // Toggle mobile menu on button click
     mobileMenuToggle.addEventListener('click', function() {
