@@ -1,5 +1,193 @@
 // Mobile Menu Toggle
 document.addEventListener('DOMContentLoaded', function() {
+    // Post data array
+    const posts = [
+        {
+            id: 1,
+            ngoName: "Heart Care NGO",
+            title: "Help Needed for Child Heart Surgery",
+            description: "Young Arjun, age 8, needs urgent heart surgery to save his life. The procedure costs ₹25,000 and every contribution brings us closer to our goal.",
+            raisedAmount: 18500,
+            goalAmount: 25000,
+            upvotes: 342,
+            avatarColor: "avatar-green"
+        },
+        {
+            id: 2,
+            ngoName: "Education First",
+            title: "Build a School Library for Rural Children",
+            description: "We're creating a library in a remote village school to provide access to quality education resources. Help us inspire young minds through reading.",
+            raisedAmount: 12750,
+            goalAmount: 20000,
+            upvotes: 258,
+            avatarColor: "avatar-blue"
+        },
+        {
+            id: 3,
+            ngoName: "Disaster Relief Fund",
+            title: "Emergency Relief for Flood Victims",
+            description: "Recent floods have displaced thousands of families. We urgently need funds for temporary shelter, food, and medical supplies for affected communities.",
+            raisedAmount: 45200,
+            goalAmount: 50000,
+            upvotes: 521,
+            avatarColor: "avatar-orange"
+        },
+        {
+            id: 4,
+            ngoName: "Wildlife Sanctuary",
+            title: "Protect Endangered Species",
+            description: "Our sanctuary is working to preserve the habitats of endangered animals. Support us in protecting these magnificent creatures for future generations.",
+            raisedAmount: 8900,
+            goalAmount: 15000,
+            upvotes: 187,
+            avatarColor: "avatar-purple"
+        },
+        {
+            id: 5,
+            ngoName: "Healthcare Initiative",
+            title: "Free Medical Camp in Slums",
+            description: "We're organizing a comprehensive medical camp to provide free healthcare checkups and medicines to underprivileged communities.",
+            raisedAmount: 22300,
+            goalAmount: 30000,
+            upvotes: 445,
+            avatarColor: "avatar-red"
+        }
+    ];
+
+    // Function to get avatar initials
+    function getAvatarInitials(name) {
+        return name.split(' ').map(word => word[0]).join('').substring(0, 2).toUpperCase();
+    }
+
+    // Function to format currency
+    function formatCurrency(amount) {
+        return '$' + amount.toLocaleString();
+    }
+
+    // Function to render posts
+    function renderPosts() {
+        const postsFeed = document.getElementById('postsFeed');
+        
+        postsFeed.innerHTML = posts.map(post => {
+            const progressPercentage = (post.raisedAmount / post.goalAmount) * 100;
+            const initials = getAvatarInitials(post.ngoName);
+            
+            return `
+                <div class="post-card">
+                    <!-- Post Header -->
+                    <div class="post-header">
+                        <div class="post-header-left">
+                            <div class="post-avatar ${post.avatarColor}">
+                                ${initials}
+                            </div>
+                            <span class="post-ngo-name">${post.ngoName}</span>
+                        </div>
+                        <button class="post-more-btn" aria-label="More options">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="5" r="1"></circle>
+                                <circle cx="12" cy="12" r="1"></circle>
+                                <circle cx="12" cy="19" r="1"></circle>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Post Body -->
+                    <div class="post-body">
+                        <h3 class="post-title">${post.title}</h3>
+                        <p class="post-description">${post.description}</p>
+
+                        <!-- Progress Section -->
+                        <div class="progress-section">
+                            <div class="progress-bar-container">
+                                <div class="progress-bar-fill" style="width: ${progressPercentage}%;"></div>
+                            </div>
+                            <div class="progress-metadata">
+                                <span class="progress-raised">${formatCurrency(post.raisedAmount)} raised</span>
+                                <span class="progress-goal">Goal: ${formatCurrency(post.goalAmount)}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Post Actions -->
+                    <div class="post-actions">
+                        <div class="post-actions-left">
+                            <button class="btn-donate" data-post-id="${post.id}">Donate</button>
+                            <button class="btn-learn-more" data-post-id="${post.id}">Learn More</button>
+                        </div>
+                        <button class="post-upvote" data-post-id="${post.id}" data-upvotes="${post.upvotes}">
+                            <span class="upvote-icon">⇧</span> ${post.upvotes}
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        // Add event listeners after rendering
+        attachPostEventListeners();
+    }
+
+    // Function to attach event listeners to posts
+    function attachPostEventListeners() {
+        // Donate button handlers
+        document.querySelectorAll('.btn-donate').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const postId = this.getAttribute('data-post-id');
+                console.log('Donate clicked for post:', postId);
+                // Add your donation logic here
+                alert(`Opening donation modal for post ${postId}`);
+            });
+        });
+
+        // Learn More button handlers
+        document.querySelectorAll('.btn-learn-more').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const postId = this.getAttribute('data-post-id');
+                console.log('Learn More clicked for post:', postId);
+                // Add your learn more logic here
+                alert(`Opening details for post ${postId}`);
+            });
+        });
+
+        // More button handlers
+        document.querySelectorAll('.post-more-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                console.log('More options clicked');
+                // Add your more options menu here
+            });
+        });
+
+        // Upvote button handlers
+        document.querySelectorAll('.post-upvote').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const postId = this.getAttribute('data-post-id');
+                const isUpvoted = this.classList.contains('upvoted');
+                
+                if (isUpvoted) {
+                    this.classList.remove('upvoted');
+                    let count = parseInt(this.getAttribute('data-upvotes'));
+                    count--;
+                    this.setAttribute('data-upvotes', count);
+                    this.innerHTML = `<span class="upvote-icon">⇧</span> ${count}`;
+                } else {
+                    this.classList.add('upvoted');
+                    let count = parseInt(this.getAttribute('data-upvotes'));
+                    count++;
+                    this.setAttribute('data-upvotes', count);
+                    this.innerHTML = `<span class="upvote-icon">⇧</span> ${count}`;
+                }
+                
+                console.log('Upvote toggled for post:', postId);
+            });
+        });
+    }
+
+    // Render posts on page load
+    renderPosts();
+
     const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
     const mobileMenu = document.querySelector('.mobile-menu');
     const navContainer = document.querySelector('.nav-container');
