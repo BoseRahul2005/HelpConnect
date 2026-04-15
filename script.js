@@ -185,8 +185,96 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Function to format follower count
+    function formatFollowers(count) {
+        if (count >= 1000) {
+            return (count / 1000).toFixed(1) + 'K';
+        }
+        return count.toLocaleString();
+    }
+
+    // Right sidebar data
+    const ngos = [
+        { id: 1, name: 'Save The Children', followers: 12400 },
+        { id: 2, name: 'GreenEarth Foundation', followers: 8950 },
+        { id: 3, name: 'Helping Hands', followers: 15600 },
+        { id: 4, name: 'MedAid Global', followers: 7200 }
+    ];
+
+    const urgentCases = [
+        { id: 1, title: 'Earthquake Relief — Turkey', daysLeft: 3 },
+        { id: 2, title: 'Child Heart Surgery Fund', daysLeft: 5 }
+    ];
+
+    // Function to render NGO list widget
+    function renderNGOList() {
+        const ngoList = document.getElementById('ngoList');
+        if (!ngoList) return;
+
+        ngoList.innerHTML = ngos.map(ngo => `
+            <li class="ngo-item">
+                <div class="ngo-info">
+                    <div class="ngo-name">${ngo.name}</div>
+                    <div class="ngo-followers">${formatFollowers(ngo.followers)} followers</div>
+                </div>
+                <button class="btn-follow" data-ngo-id="${ngo.id}">Follow</button>
+            </li>
+        `).join('');
+
+        // Attach follow button listeners
+        document.querySelectorAll('.btn-follow').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const ngoId = this.getAttribute('data-ngo-id');
+                this.classList.toggle('following');
+                this.textContent = this.classList.contains('following') ? 'Following' : 'Follow';
+                console.log('Follow toggled for NGO:', ngoId);
+            });
+        });
+    }
+
+    // Function to render urgent cases widget
+    function renderUrgentCases() {
+        const urgentCasesList = document.getElementById('urgentCasesList');
+        if (!urgentCasesList) return;
+
+        urgentCasesList.innerHTML = urgentCases.map(urgentCase => `
+            <li class="urgent-case-item">
+                <a href="#" class="urgent-case-link">${urgentCase.title}</a>
+                <span class="urgent-case-badge">${urgentCase.daysLeft} days left</span>
+            </li>
+        `).join('');
+
+        // Attach urgent case link listeners
+        document.querySelectorAll('.urgent-case-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const caseTitle = this.textContent.trim();
+                console.log('Urgent case clicked:', caseTitle);
+                // Add your logic to handle urgent case click
+                alert(`Opening details for: ${caseTitle}`);
+            });
+        });
+    }
+
+    // Function to attach CTA button listener
+    function attachCTAListener() {
+        const ctaBtn = document.querySelector('.btn-start-giving');
+        if (ctaBtn) {
+            ctaBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                console.log('Start Giving button clicked');
+                alert('Redirecting to donation page...');
+                // window.location.href = '/donate';
+            });
+        }
+    }
+
     // Render posts on page load
     renderPosts();
+    renderNGOList();
+    renderUrgentCases();
+    attachCTAListener();
 
     const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
     const mobileMenu = document.querySelector('.mobile-menu');
