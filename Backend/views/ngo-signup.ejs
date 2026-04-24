@@ -28,8 +28,12 @@
                 <p class="form-subtitle">Register your organization and start making a difference</p>
             </div>
 
+            <% if (typeof errorMessage !== 'undefined' && errorMessage) { %>
+                <div class="form-alert error-message"><%= errorMessage %></div>
+            <% } %>
+
             <!-- Sign Up Form -->
-            <form class="signup-form" id="ngoSignupForm">
+            <form class="signup-form" id="ngoSignupForm" method="POST" action="/ngo/signup">
                 <!-- Organization Name -->
                 <div class="form-group">
                     <label for="orgName" class="form-label">Organization Name *</label>

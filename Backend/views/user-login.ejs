@@ -27,8 +27,12 @@
                 <p class="form-subtitle">Sign in to your account and make a difference</p>
             </div>
 
+            <% if (typeof errorMessage !== 'undefined' && errorMessage) { %>
+                <div class="form-alert error-message"><%= errorMessage %></div>
+            <% } %>
+
             <!-- Login Form -->
-            <form class="login-form" id="suLoginForm">
+            <form class="login-form" id="suLoginForm" method="POST" action="/user/login">
                 <!-- Email or Mobile Number -->
                 <div class="form-group">
                     <label for="emailOrMobile" class="form-label">Email or Mobile Number</label>

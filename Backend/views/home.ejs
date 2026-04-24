@@ -47,8 +47,12 @@
                     <span class="notification-badge">2</span>
                 </button>
 
-                <!-- Get Started Button -->
-                <a href="/get-started" class="btn btn-primary" onclick="window.location.href='/get-started'; return false;">Get Started</a>
+                <!-- Get Started Button / Profile Badge -->
+                <% if (loggedInNgo) { %>
+                    <a href="/ngo/profile" class="btn btn-primary profile-badge" aria-label="Open NGO profile for <%= loggedInNgo.orgName %>" title="<%= loggedInNgo.orgName %>"><%= ngoInitials %></a>
+                <% } else { %>
+                    <a href="/get-started" class="btn btn-primary">Get Started</a>
+                <% } %>
 
                 <!-- Mobile Menu Toggle -->
                 <button class="sidebar-toggle" aria-label="Toggle sidebar" style="display: none;">
@@ -89,7 +93,11 @@
                     </svg>
                     <span class="notification-badge">2</span>
                 </button>
-                <a href="/get-started" class="btn btn-primary" onclick="window.location.href='/get-started'; return false;">Get Started</a>
+                <% if (loggedInNgo) { %>
+                    <a href="/ngo/profile" class="btn btn-primary profile-badge" aria-label="Open NGO profile for <%= loggedInNgo.orgName %>" title="<%= loggedInNgo.orgName %>"><%= ngoInitials %></a>
+                <% } else { %>
+                    <a href="/get-started" class="btn btn-primary">Get Started</a>
+                <% } %>
             </div>
         </div>
     </nav>

@@ -1,0 +1,47 @@
+CREATE DATABASE IF NOT EXISTS `HelpConnect`
+	CHARACTER SET utf8mb4
+	COLLATE utf8mb4_unicode_ci;
+
+USE `HelpConnect`;
+
+CREATE TABLE IF NOT EXISTS ngo_users (
+	id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+	org_name VARCHAR(150) NOT NULL,
+	email VARCHAR(255) NOT NULL,
+	phone VARCHAR(25) NOT NULL,
+	org_type VARCHAR(50) NOT NULL,
+	website VARCHAR(255) DEFAULT NULL,
+	founded_on DATE DEFAULT NULL,
+	password_hash VARCHAR(255) NOT NULL,
+	password_salt VARCHAR(64) NOT NULL,
+	terms_accepted TINYINT(1) NOT NULL DEFAULT 0,
+	posts JSON NOT NULL,
+	comments JSON NOT NULL,
+	donations JSON NOT NULL,
+	followers JSON NOT NULL,
+	saved_items JSON NOT NULL,
+	upvoted JSON NOT NULL,
+	history JSON NOT NULL,
+	submitted_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+	last_login_at TIMESTAMP NULL DEFAULT NULL,
+	PRIMARY KEY (id),
+	UNIQUE KEY unique_ngo_email (email),
+	UNIQUE KEY unique_ngo_phone (phone)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS single_users (
+	id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+	name VARCHAR(150) NOT NULL,
+	username VARCHAR(50) NOT NULL,
+	email_or_mobile VARCHAR(255) NOT NULL,
+	password_hash VARCHAR(255) NOT NULL,
+	password_salt VARCHAR(64) NOT NULL,
+	birthday DATE NOT NULL,
+	submitted_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+	last_login_at TIMESTAMP NULL DEFAULT NULL,
+	PRIMARY KEY (id),
+	UNIQUE KEY unique_single_user_username (username),
+	UNIQUE KEY unique_single_user_contact (email_or_mobile)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

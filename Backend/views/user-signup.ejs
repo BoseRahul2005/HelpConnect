@@ -22,8 +22,12 @@
                 <p class="form-subtitle">Join HelpConnect and start supporting causes.</p>
             </div>
 
+            <% if (typeof errorMessage !== 'undefined' && errorMessage) { %>
+                <div class="form-alert error-message"><%= errorMessage %></div>
+            <% } %>
+
             <!-- Form Section -->
-            <form id="signupForm" class="signup-form">
+            <form id="signupForm" class="signup-form" method="POST" action="/user/signup">
                 <!-- Name Field -->
                 <div class="form-group">
                     <label for="name" class="form-label">Name <span class="required">*</span></label>

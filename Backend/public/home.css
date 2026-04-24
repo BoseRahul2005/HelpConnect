@@ -191,6 +191,30 @@ body {
     justify-content: center;
 }
 
+.profile-badge {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    min-height: 42px;
+    padding: 0;
+    border-radius: 50%;
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    box-shadow: 0 6px 16px rgba(46, 125, 50, 0.24);
+}
+
+.profile-badge:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(46, 125, 50, 0.32);
+}
+
+.profile-badge:focus {
+    outline: 2px solid var(--primary-green);
+    outline-offset: 2px;
+}
+
 .btn-primary:hover {
     background-color: var(--primary-green-hover);
     box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);

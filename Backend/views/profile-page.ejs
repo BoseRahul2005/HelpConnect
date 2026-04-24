@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title><%= ngo.orgName %> Profile - HelpConnect</title>
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="/profile-page.css">
+</head>
+<body>
+	<main class="profile-shell">
+		<section class="profile-topbar card-surface">
+			<div class="profile-identify">
+				<div class="profile-avatar"><%= ngoInitials %></div>
+				<div>
+					<p class="profile-kicker">NGO Profile</p>
+					<h1 class="profile-name"><%= ngo.orgName %></h1>
+					<p class="profile-handle"><%= ngoHandle %></p>
+					<div class="profile-meta-row">
+						<span class="status-pill"><%= ngoStatusLabel %></span>
+						<span class="profile-meta-note">Member since <%= ngoJoinedLabel %></span>
+					</div>
+				</div>
+			</div>
+
+			<div class="profile-actions">
+				<a href="/ngo/dashboard" class="action-button secondary-button">Manage Dashboard</a>
+				<a href="/ngo/logout" class="action-button ghost-button">Log out</a>
+			</div>
+		</section>
+
+		<section class="profile-tabs card-surface" aria-label="Profile sections">
+			<button class="profile-tab active" data-profile-tab="overview" type="button">Overview</button>
+			<button class="profile-tab" data-profile-tab="posts" type="button">Posts</button>
+			<button class="profile-tab" data-profile-tab="comments" type="button">Comments</button>
+			<button class="profile-tab" data-profile-tab="donations" type="button">Donations</button>
+			<button class="profile-tab" data-profile-tab="saved" type="button">Saved</button>
+			<button class="profile-tab" data-profile-tab="history" type="button">History</button>
+			<button class="profile-tab" data-profile-tab="upvoted" type="button">Upvoted</button>
+		</section>
+
+		<section class="profile-grid">
+			<div class="profile-main-column">
+				<div class="tab-panel active card-surface" data-profile-panel="overview">
+					<div class="panel-header">
+						<div>
+							<p class="panel-kicker">Showing all content</p>
+							<h2 class="panel-title">Overview</h2>
+						</div>
+						<span class="panel-arrow">›</span>
+					</div>
+
+					<div class="quick-actions">
+						<a href="/ngo/dashboard" class="action-button primary-button">Create Post</a>
+						<a href="/get-started" class="action-button icon-button" aria-label="Back to selection">↩</a>
+					</div>
+
+					<div class="profile-detail-grid">
+						<div class="detail-card">
+							<span class="detail-label">Email Address</span>
+							<strong class="detail-value"><%= ngoContactEmail %></strong>
+							<p class="detail-note">Primary login for the organization</p>
+						</div>
+						<div class="detail-card">
+							<span class="detail-label">Phone Number</span>
+							<strong class="detail-value"><%= ngoContactPhone %></strong>
+							<p class="detail-note">Signup contact number</p>
+						</div>
+						<div class="detail-card">
+							<span class="detail-label">Organization Type</span>
+							<strong class="detail-value"><%= ngoTypeLabel %></strong>
+							<p class="detail-note">Registered category: <%= ngo.orgType %></p>
+						</div>
+						<div class="detail-card">
+							<span class="detail-label">Account ID</span>
+							<strong class="detail-value"><%= ngoId %></strong>
+							<p class="detail-note">Created <%= ngoJoinedAt %></p>
+						</div>
+					</div>
+
+					<div class="stats-strip profile-stats">
+						<div class="stat-tile">
+							<span class="stat-label">Campaigns</span>
+							<strong class="stat-value"><%= campaignCount %></strong>
+						</div>
+						<div class="stat-tile">
+							<span class="stat-label">Donations</span>
+							<strong class="stat-value"><%= donationCount %></strong>
+						</div>
+						<div class="stat-tile">
+							<span class="stat-label">Followers</span>
+							<strong class="stat-value"><%= followerCount %></strong>
+						</div>
+						<div class="stat-tile">
+							<span class="stat-label">Total Raised</span>
+							<strong class="stat-value"><%= totalRaisedLabel %></strong>
+						</div>
+					</div>
+
+					<div class="timeline-card history-panel">
+						<div class="section-inline-header">
+							<h3>Recent activity</h3>
+							<span><%= recentHistory.length %> events</span>
+						</div>
+						<div class="history-list compact">
+							<% recentHistory.forEach((item) => { %>
+								<div class="history-item">
+									<span class="history-dot"></span>
+									<div>
+										<strong><%= item.title %></strong>
+										<p><%= item.description %></p>
+										<small><%= item.date ? new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '' %></small>
+									</div>
+								</div>
+							<% }) %>
+						</div>
+					</div>
+				</div>
+
+				<div class="tab-panel card-surface" data-profile-panel="posts">
+					<div class="panel-header">
+						<div>
+							<p class="panel-kicker">Campaign feed</p>
+							<h2 class="panel-title">Posts</h2>
+						</div>
+					</div>
+					<% if (recentPosts.length) { %>
+						<div class="record-list">
+							<% recentPosts.forEach((post) => { %>
+								<article class="record-item">
+									<div class="record-item-header">
+										<div>
+											<h3><%= post.title || post.name || 'Campaign update' %></h3>
+											<p><%= post.description || post.message || 'No description available yet.' %></p>
+										</div>
+										<span class="record-chip"><%= post.status || 'Active' %></span>
+									</div>
+									<div class="record-item-footer">
+										<span><%= post.createdAt ? new Date(post.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ngoJoinedLabel %></span>
+									</div>
+								</article>
+							<% }) %>
+						</div>
+					<% } else { %>
+						<div class="timeline-card empty-state-compact">
+							<p>No posts yet. Publish your first campaign update to keep supporters informed.</p>
+						</div>
+					<% } %>
+				</div>
+
+				<div class="tab-panel card-surface" data-profile-panel="comments">
+					<div class="panel-header">
+						<div>
+							<p class="panel-kicker">Community messages</p>
+							<h2 class="panel-title">Comments</h2>
+						</div>
+					</div>
+					<% if (recentComments.length) { %>
+						<div class="record-list">
+							<% recentComments.forEach((comment) => { %>
+								<article class="record-item">
+									<div class="record-item-header">
+										<div>
+											<h3><%= comment.author || comment.name || 'Comment' %></h3>
+											<p><%= comment.message || comment.text || 'No comment text available.' %></p>
+										</div>
+										<span class="record-chip">Comment</span>
+									</div>
+									<div class="record-item-footer">
+										<span><%= comment.createdAt ? new Date(comment.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ngoJoinedLabel %></span>
+									</div>
+								</article>
+							<% }) %>
+						</div>
+					<% } else { %>
+						<div class="timeline-card empty-state-compact">
+							<p>No comments yet. Donor and supporter feedback will show up here.</p>
+						</div>
+					<% } %>
+				</div>
+
+				<div class="tab-panel card-surface" data-profile-panel="donations">
+					<div class="panel-header">
+						<div>
+							<p class="panel-kicker">Donor activity</p>
+							<h2 class="panel-title">Donations</h2>
+						</div>
+					</div>
+					<div class="stats-strip">
+						<div class="stat-tile">
+							<span class="stat-label">Total Raised</span>
+							<strong class="stat-value"><%= totalRaisedLabel %></strong>
+						</div>
+						<div class="stat-tile">
+							<span class="stat-label">Donation Entries</span>
+							<strong class="stat-value"><%= donationCount %></strong>
+						</div>
+					</div>
+					<% if (recentDonations.length) { %>
+						<div class="record-list">
+							<% recentDonations.forEach((donation) => { %>
+								<article class="record-item">
+									<div class="record-item-header">
+										<div>
+											<h3><%= donation.donorName || donation.name || donation.source || 'Donation' %></h3>
+											<p><%= donation.note || donation.message || 'Incoming support contribution.' %></p>
+										</div>
+										<span class="record-chip"><%= donation.amount ? formatCurrency(donation.amount) : 'Recorded' %></span>
+									</div>
+									<div class="record-item-footer">
+										<span><%= donation.createdAt ? new Date(donation.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ngoJoinedLabel %></span>
+									</div>
+								</article>
+							<% }) %>
+						</div>
+					<% } else { %>
+						<div class="timeline-card empty-state-compact">
+							<p>No donations yet. Incoming support will be shown here once donors contribute.</p>
+						</div>
+					<% } %>
+				</div>
+
+				<div class="tab-panel card-surface" data-profile-panel="saved">
+					<div class="panel-header">
+						<div>
+							<p class="panel-kicker">Saved drafts</p>
+							<h2 class="panel-title">Saved</h2>
+						</div>
+					</div>
+					<% if (recentSavedItems.length) { %>
+						<div class="record-list">
+							<% recentSavedItems.forEach((savedItem) => { %>
+								<article class="record-item">
+									<div class="record-item-header">
+										<div>
+											<h3><%= savedItem.title || savedItem.name || 'Saved item' %></h3>
+											<p><%= savedItem.description || savedItem.note || 'Saved for later review.' %></p>
+										</div>
+										<span class="record-chip">Saved</span>
+									</div>
+								</article>
+							<% }) %>
+						</div>
+					<% } else { %>
+						<div class="timeline-card empty-state-compact">
+							<p>Nothing saved yet. Draft campaigns or future updates will be stored here.</p>
+						</div>
+					<% } %>
+				</div>
+
+				<div class="tab-panel card-surface" data-profile-panel="history">
+					<div class="panel-header">
+						<div>
+							<p class="panel-kicker">Recent actions</p>
+							<h2 class="panel-title">History</h2>
+						</div>
+					</div>
+					<div class="history-list">
+						<% recentHistory.forEach((item) => { %>
+							<div class="history-item">
+								<span class="history-dot"></span>
+								<div>
+									<strong><%= item.title %></strong>
+									<p><%= item.description %></p>
+									<small><%= item.date ? new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '' %></small>
+								</div>
+							</div>
+						<% }) %>
+					</div>
+				</div>
+
+				<div class="tab-panel card-surface" data-profile-panel="upvoted">
+					<div class="panel-header">
+						<div>
+							<p class="panel-kicker">Supported causes</p>
+							<h2 class="panel-title">Upvoted</h2>
+						</div>
+					</div>
+					<% if (recentUpvoted.length) { %>
+						<div class="record-list">
+							<% recentUpvoted.forEach((item) => { %>
+								<article class="record-item">
+									<div class="record-item-header">
+										<div>
+											<h3><%= item.title || item.name || 'Supported cause' %></h3>
+											<p><%= item.description || item.message || 'Previously supported by your NGO.' %></p>
+										</div>
+										<span class="record-chip">Upvoted</span>
+									</div>
+								</article>
+							<% }) %>
+						</div>
+					<% } else { %>
+						<div class="timeline-card empty-state-compact">
+							<p>No supported causes yet. Follow or upvote campaigns to build your engagement history.</p>
+						</div>
+					<% } %>
+				</div>
+			</div>
+
+			<aside class="profile-sidebar-column">
+				<section class="summary-card card-surface">
+					<div class="summary-cover"></div>
+					<div class="summary-body">
+						<div class="summary-head">
+							<div>
+								<h3><%= ngo.orgName %></h3>
+								<p><%= ngoTypeLabel %></p>
+							</div>
+							<a href="/ngo/dashboard" class="share-button">Share</a>
+						</div>
+
+						<div class="mini-stats">
+							<div>
+								<strong><%= campaignCount %></strong>
+								<span>Campaigns</span>
+							</div>
+							<div>
+								<strong><%= totalRaisedLabel %></strong>
+								<span>Donations</span>
+							</div>
+							<div>
+								<strong><%= ngoJoinedLabel %></strong>
+								<span>Member since</span>
+							</div>
+							<div>
+								<strong><%= followerCount %></strong>
+								<span>Supporters</span>
+							</div>
+						</div>
+					</div>
+				</section>
+
+				<section class="achievements-card card-surface">
+					<div class="side-card-header">
+						<h3>Achievements</h3>
+						<button class="side-link-button" type="button">View All</button>
+					</div>
+					<div class="achievement-badges">
+						<span class="achievement-pill <%= ngo.termsAccepted ? '' : 'achievement-pill-muted' %>"><%= ngo.termsAccepted ? 'Verified NGO' : 'Unverified' %></span>
+						<span class="achievement-pill">Profile Ready</span>
+						<span class="achievement-pill <%= campaignCount > 0 ? '' : 'achievement-pill-muted' %>"><%= campaignCount > 0 ? 'Campaign Starter' : 'No Campaign Yet' %></span>
+					</div>
+					<p class="side-caption">Complete your first campaign to unlock more profile achievements.</p>
+				</section>
+
+				<section class="settings-card card-surface">
+					<div class="side-card-header">
+						<h3>Settings</h3>
+					</div>
+
+					<div class="settings-list">
+						<div class="settings-row">
+							<div>
+								<strong>Profile</strong>
+								<p>Customize your organization page</p>
+							</div>
+							<button type="button">Update</button>
+						</div>
+						<div class="settings-row">
+							<div>
+								<strong>Campaigns</strong>
+								<p>Manage active drives</p>
+							</div>
+							<button type="button">Update</button>
+						</div>
+						<div class="settings-row">
+							<div>
+								<strong>Avatar</strong>
+								<p>Style your profile badge</p>
+							</div>
+							<button type="button">Update</button>
+						</div>
+					</div>
+				</section>
+			</aside>
+		</section>
+	</main>
+
+	<script src="/profile-page.js"></script>
+</body>
+</html>

@@ -256,6 +256,14 @@ html, body {
     transition: var(--transition);
 }
 
+.form-alert {
+    margin-bottom: 0.5rem;
+    padding: 0.85rem 1rem;
+    border-radius: 0.75rem;
+    background-color: #fef2f2;
+    border: 1px solid #fecaca;
+}
+
 .form-input.error {
     border-color: var(--error-color);
     background-color: #fef2f2;

@@ -440,7 +440,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Handle Sign Up button
-    const signupBtns = document.querySelectorAll('.btn-primary');
+    const signupBtns = document.querySelectorAll('button.btn-primary');
     signupBtns.forEach(btn => {
         btn.addEventListener('click', function(event) {
             event.preventDefault();
