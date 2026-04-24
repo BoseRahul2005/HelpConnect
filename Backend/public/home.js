@@ -1,7 +1,9 @@
 // Mobile Menu Toggle
 document.addEventListener('DOMContentLoaded', function() {
-    // Post data array
-    const posts = [
+    const userFeedPosts = Array.isArray(window.__HOME_FEED_POSTS__) ? window.__HOME_FEED_POSTS__ : [];
+
+    // Demo post data array
+    const demoPosts = [
         {
             id: 1,
             ngoName: "Heart Care NGO",
@@ -54,6 +56,54 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     ];
 
+    function escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>\"']/g, function(character) {
+            const replacements = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            };
+
+            return replacements[character] || character;
+        });
+    }
+
+    function getAvatarColor(seed) {
+        const colors = ['avatar-green', 'avatar-blue', 'avatar-orange', 'avatar-purple', 'avatar-red'];
+        const source = String(seed || 'community');
+        let hash = 0;
+
+        for (let index = 0; index < source.length; index += 1) {
+            hash = (hash * 31 + source.charCodeAt(index)) >>> 0;
+        }
+
+        return colors[hash % colors.length];
+    }
+
+    function normalizeUserPost(post) {
+        const displayName = post.authorName || post.authorUsername || 'Community member';
+        const fundraiserGoal = Number(post.fundRaiseGoal || 0);
+        const hasFundraiserGoal = Boolean(post.isFundraiser) && fundraiserGoal > 0;
+
+        return {
+            id: `user-${post.id}`,
+            ngoName: displayName,
+            title: post.title || 'Community update',
+            description: post.body || '',
+            raisedAmount: 0,
+            goalAmount: hasFundraiserGoal ? fundraiserGoal : 0,
+            upvotes: 0,
+            avatarColor: getAvatarColor(displayName),
+            imageUrl: post.imageUrl || post.imagePath || '',
+        };
+    }
+
+    function getFeedPosts() {
+        return [...userFeedPosts.map(normalizeUserPost), ...demoPosts];
+    }
+
     // Function to get avatar initials
     function getAvatarInitials(name) {
         return name.split(' ').map(word => word[0]).join('').substring(0, 2).toUpperCase();
@@ -61,16 +111,38 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Function to format currency
     function formatCurrency(amount) {
-        return '$' + amount.toLocaleString();
+        return '$' + Number(amount || 0).toLocaleString();
     }
 
     // Function to render posts
     function renderPosts() {
         const postsFeed = document.getElementById('postsFeed');
+        const posts = getFeedPosts();
         
         postsFeed.innerHTML = posts.map(post => {
-            const progressPercentage = (post.raisedAmount / post.goalAmount) * 100;
+            const hasGoal = post.goalAmount > 0;
+            const progressPercentage = hasGoal ? Math.min((post.raisedAmount / post.goalAmount) * 100, 100) : 0;
             const initials = getAvatarInitials(post.ngoName);
+            const imageMarkup = post.imageUrl
+                ? `
+                    <div class="post-media">
+                        <img src="${escapeHtml(post.imageUrl)}" alt="${escapeHtml(post.title)}">
+                    </div>
+                `
+                : '';
+            const progressMarkup = hasGoal
+                ? `
+                    <div class="progress-section">
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill" style="width: ${progressPercentage}%;"></div>
+                        </div>
+                        <div class="progress-metadata">
+                            <span class="progress-raised">${formatCurrency(post.raisedAmount)} raised</span>
+                            <span class="progress-goal">Goal: ${formatCurrency(post.goalAmount)}</span>
+                        </div>
+                    </div>
+                `
+                : '';
             
             return `
                 <div class="post-card">
@@ -93,19 +165,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     <!-- Post Body -->
                     <div class="post-body">
-                        <h3 class="post-title">${post.title}</h3>
-                        <p class="post-description">${post.description}</p>
-
-                        <!-- Progress Section -->
-                        <div class="progress-section">
-                            <div class="progress-bar-container">
-                                <div class="progress-bar-fill" style="width: ${progressPercentage}%;"></div>
-                            </div>
-                            <div class="progress-metadata">
-                                <span class="progress-raised">${formatCurrency(post.raisedAmount)} raised</span>
-                                <span class="progress-goal">Goal: ${formatCurrency(post.goalAmount)}</span>
-                            </div>
-                        </div>
+                        <h3 class="post-title">${escapeHtml(post.title)}</h3>
+                        <p class="post-description">${escapeHtml(post.description)}</p>
+                        ${imageMarkup}
+                        ${progressMarkup}
                     </div>
 
                     <!-- Post Actions -->

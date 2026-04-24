@@ -10,6 +10,24 @@
     <link rel="stylesheet" href="/home.css">
 </head>
 <body>
+    <%
+        const profileButton = loggedInNgo
+            ? {
+                href: '/ngo/profile',
+                label: `Open NGO profile for ${loggedInNgo.orgName}`,
+                title: loggedInNgo.orgName,
+                text: ngoInitials,
+            }
+            : loggedInUser
+                ? {
+                    href: '/profile',
+                    label: `Open profile for ${loggedInUser.name}`,
+                    title: loggedInUser.name,
+                    text: userInitials,
+                    pictureUrl: loggedInUser.profilePictureUrl,
+                }
+                : null;
+    %>
     <!-- Navigation Bar -->
     <nav class="navbar">
         <div class="nav-container">
@@ -48,8 +66,14 @@
                 </button>
 
                 <!-- Get Started Button / Profile Badge -->
-                <% if (loggedInNgo) { %>
-                    <a href="/ngo/profile" class="btn btn-primary profile-badge" aria-label="Open NGO profile for <%= loggedInNgo.orgName %>" title="<%= loggedInNgo.orgName %>"><%= ngoInitials %></a>
+                <% if (profileButton) { %>
+                    <a href="<%= profileButton.href %>" class="btn btn-primary profile-badge" aria-label="<%= profileButton.label %>" title="<%= profileButton.title %>">
+                        <% if (profileButton.pictureUrl) { %>
+                            <img class="profile-badge-image" src="<%= profileButton.pictureUrl %>" alt="" aria-hidden="true">
+                        <% } else { %>
+                            <%= profileButton.text %>
+                        <% } %>
+                    </a>
                 <% } else { %>
                     <a href="/get-started" class="btn btn-primary">Get Started</a>
                 <% } %>
@@ -93,8 +117,14 @@
                     </svg>
                     <span class="notification-badge">2</span>
                 </button>
-                <% if (loggedInNgo) { %>
-                    <a href="/ngo/profile" class="btn btn-primary profile-badge" aria-label="Open NGO profile for <%= loggedInNgo.orgName %>" title="<%= loggedInNgo.orgName %>"><%= ngoInitials %></a>
+                <% if (profileButton) { %>
+                    <a href="<%= profileButton.href %>" class="btn btn-primary profile-badge" aria-label="<%= profileButton.label %>" title="<%= profileButton.title %>">
+                        <% if (profileButton.pictureUrl) { %>
+                            <img class="profile-badge-image" src="<%= profileButton.pictureUrl %>" alt="" aria-hidden="true">
+                        <% } else { %>
+                            <%= profileButton.text %>
+                        <% } %>
+                    </a>
                 <% } else { %>
                     <a href="/get-started" class="btn btn-primary">Get Started</a>
                 <% } %>
@@ -266,6 +296,9 @@
         </aside>
     </div>
 
+    <script>
+        window.__HOME_FEED_POSTS__ = <%- homeFeedPostsJson %>;
+    </script>
     <script src="/home.js"></script>
 </body>
 </html>

@@ -60,6 +60,8 @@ CREATE TABLE IF NOT EXISTS single_users (
     email_or_mobile VARCHAR(255) NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     password_salt VARCHAR(64) NOT NULL,
+    profile_picture_path VARCHAR(255) DEFAULT NULL,
+    profile_picture_name VARCHAR(255) DEFAULT NULL,
     birthday DATE NOT NULL,
     submitted_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -67,6 +69,20 @@ CREATE TABLE IF NOT EXISTS single_users (
     PRIMARY KEY (id),
     UNIQUE KEY unique_single_user_username (username),
     UNIQUE KEY unique_single_user_contact (email_or_mobile)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+`;
+
+const singleUserPostsTableSql = `
+CREATE TABLE IF NOT EXISTS single_user_posts (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    user_id BIGINT UNSIGNED NOT NULL,
+    title VARCHAR(160) NOT NULL DEFAULT '',
+    body TEXT NOT NULL,
+    submitted_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_single_user_posts_user_id (user_id, submitted_at),
+    CONSTRAINT fk_single_user_posts_user FOREIGN KEY (user_id) REFERENCES single_users (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 `;
 
@@ -153,10 +169,50 @@ function normalizeSingleUserRow(row) {
         emailOrMobile: row.email_or_mobile,
         passwordHash: row.password_hash,
         passwordSalt: row.password_salt,
+        profilePicturePath: row.profile_picture_path,
+        profilePictureUrl: row.profile_picture_path,
+        profilePictureName: row.profile_picture_name,
         birthday: row.birthday,
         submittedAt: row.submitted_at,
         updatedAt: row.updated_at,
         lastLoginAt: row.last_login_at,
+    };
+}
+
+function normalizeSingleUserPostRow(row) {
+    if (!row) {
+        return null;
+    }
+
+    return {
+        id: row.id,
+        userId: row.user_id,
+        title: row.title,
+        body: row.body,
+        imagePath: row.image_path,
+        imageUrl: row.image_path,
+        imageName: row.image_name,
+        isFundraiser: Boolean(row.is_fundraiser),
+        fundRaiseGoal: row.fund_raise_goal === null || row.fund_raise_goal === undefined
+            ? null
+            : Number(row.fund_raise_goal),
+        submittedAt: row.submitted_at,
+        updatedAt: row.updated_at,
+    };
+}
+
+function normalizeSingleUserFeedPostRow(row) {
+    if (!row) {
+        return null;
+    }
+
+    const post = normalizeSingleUserPostRow(row);
+
+    return {
+        ...post,
+        authorId: row.user_id,
+        authorName: row.user_name,
+        authorUsername: row.user_username,
     };
 }
 
@@ -171,6 +227,43 @@ async function ensureDatabase() {
 
             await appPool.query(ngoTableSql);
             await appPool.query(singleUserTableSql);
+            await appPool.query(singleUserPostsTableSql);
+
+            const [singleUserColumnRows] = await appPool.query(
+                `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'single_users'`,
+                [connectionConfig.database]
+            );
+            const singleUserColumns = new Set(singleUserColumnRows.map((row) => row.COLUMN_NAME));
+
+            if (!singleUserColumns.has('profile_picture_path')) {
+                await appPool.query('ALTER TABLE single_users ADD COLUMN profile_picture_path VARCHAR(255) DEFAULT NULL AFTER password_salt');
+            }
+
+            if (!singleUserColumns.has('profile_picture_name')) {
+                await appPool.query('ALTER TABLE single_users ADD COLUMN profile_picture_name VARCHAR(255) DEFAULT NULL AFTER profile_picture_path');
+            }
+
+            const [postColumnRows] = await appPool.query(
+                `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'single_user_posts'`,
+                [connectionConfig.database]
+            );
+            const postColumns = new Set(postColumnRows.map((row) => row.COLUMN_NAME));
+
+            if (!postColumns.has('image_path')) {
+                await appPool.query('ALTER TABLE single_user_posts ADD COLUMN image_path VARCHAR(255) DEFAULT NULL AFTER body');
+            }
+
+            if (!postColumns.has('image_name')) {
+                await appPool.query('ALTER TABLE single_user_posts ADD COLUMN image_name VARCHAR(255) DEFAULT NULL AFTER image_path');
+            }
+
+            if (!postColumns.has('is_fundraiser')) {
+                await appPool.query('ALTER TABLE single_user_posts ADD COLUMN is_fundraiser TINYINT(1) NOT NULL DEFAULT 0 AFTER image_name');
+            }
+
+            if (!postColumns.has('fund_raise_goal')) {
+                await appPool.query('ALTER TABLE single_user_posts ADD COLUMN fund_raise_goal DECIMAL(12,2) DEFAULT NULL AFTER is_fundraiser');
+            }
         })();
     }
 
@@ -278,9 +371,130 @@ async function getSingleUserById(id) {
     return normalizeSingleUserRow(rows[0]);
 }
 
+async function getSingleUserPostById(id) {
+    const [rows] = await execute('SELECT * FROM single_user_posts WHERE id = ? LIMIT 1', [id]);
+    return normalizeSingleUserPostRow(rows[0]);
+}
+
 async function listSingleUsers() {
     const [rows] = await query('SELECT * FROM single_users ORDER BY submitted_at DESC');
     return rows.map(normalizeSingleUserRow);
+}
+
+async function listSingleUserPosts(userId) {
+    const [rows] = await execute(
+        'SELECT * FROM single_user_posts WHERE user_id = ? ORDER BY submitted_at DESC, id DESC',
+        [userId]
+    );
+
+    return rows.map(normalizeSingleUserPostRow);
+}
+
+async function updateSingleUserProfilePicture(userId, profilePicturePath, profilePictureName) {
+    const normalizedUserId = Number(userId);
+    const normalizedProfilePicturePath = String(profilePicturePath || '').trim() || null;
+    const normalizedProfilePictureName = String(profilePictureName || '').trim() || null;
+
+    if (!Number.isInteger(normalizedUserId) || normalizedUserId <= 0) {
+        return false;
+    }
+
+    const [result] = await execute(
+        'UPDATE single_users SET profile_picture_path = ?, profile_picture_name = ? WHERE id = ? LIMIT 1',
+        [normalizedProfilePicturePath, normalizedProfilePictureName, normalizedUserId]
+    );
+
+    return result.affectedRows > 0;
+}
+
+async function listRecentSingleUserFeedPosts(limit = 12) {
+    const normalizedLimit = Number.isInteger(limit) && limit > 0 ? limit : 12;
+
+    const [rows] = await execute(
+        `SELECT
+            p.*,
+            u.name AS user_name,
+            u.username AS user_username
+        FROM single_user_posts p
+        INNER JOIN single_users u ON u.id = p.user_id
+        ORDER BY p.submitted_at DESC, p.id DESC
+        LIMIT ${normalizedLimit}`
+    );
+
+    return rows.map(normalizeSingleUserFeedPostRow);
+}
+
+async function createSingleUserPost(postObject) {
+    const userId = Number(postObject.userId);
+    const title = String(postObject.title || '').trim().slice(0, 160);
+    const body = String(postObject.body || '').trim();
+    const imagePath = String(postObject.imagePath || '').trim() || null;
+    const imageName = String(postObject.imageName || '').trim() || null;
+    const fundRaiseGoal = postObject.fundRaiseGoal === null || postObject.fundRaiseGoal === undefined || postObject.fundRaiseGoal === ''
+        ? null
+        : Number(postObject.fundRaiseGoal);
+    const isFundraiser = Boolean(postObject.isFundraiser) || fundRaiseGoal !== null;
+
+    if (!Number.isInteger(userId) || userId <= 0) {
+        const invalidUserError = new Error('POST_INVALID_USER');
+        invalidUserError.code = 'POST_INVALID_USER';
+        throw invalidUserError;
+    }
+
+    if (!body) {
+        const missingBodyError = new Error('POST_BODY_REQUIRED');
+        missingBodyError.code = 'POST_BODY_REQUIRED';
+        throw missingBodyError;
+    }
+
+    if (isFundraiser && (fundRaiseGoal === null || Number.isNaN(fundRaiseGoal) || fundRaiseGoal <= 0)) {
+        const invalidGoalError = new Error('POST_GOAL_REQUIRED');
+        invalidGoalError.code = 'POST_GOAL_REQUIRED';
+        throw invalidGoalError;
+    }
+
+    const [result] = await execute(
+        `INSERT INTO single_user_posts (
+            user_id,
+            title,
+            body,
+            image_path,
+            image_name,
+            is_fundraiser,
+            fund_raise_goal
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [
+            userId,
+            title,
+            body,
+            imagePath,
+            imageName,
+            isFundraiser ? 1 : 0,
+            isFundraiser ? fundRaiseGoal : null,
+        ]
+    );
+
+    return getSingleUserPostById(result.insertId);
+}
+
+async function deleteSingleUserPost(userId, postId) {
+    const normalizedUserId = Number(userId);
+    const normalizedPostId = Number(postId);
+
+    if (!Number.isInteger(normalizedUserId) || normalizedUserId <= 0) {
+        return false;
+    }
+
+    if (!Number.isInteger(normalizedPostId) || normalizedPostId <= 0) {
+        return false;
+    }
+
+    const [result] = await execute(
+        'DELETE FROM single_user_posts WHERE id = ? AND user_id = ? LIMIT 1',
+        [normalizedPostId, normalizedUserId]
+    );
+
+    return result.affectedRows > 0;
 }
 
 async function createSingleUserAccount(userObject) {
@@ -343,6 +557,12 @@ module.exports = {
     authenticateNgo,
     getSingleUserById,
     listSingleUsers,
+    getSingleUserPostById,
+    listSingleUserPosts,
+    updateSingleUserProfilePicture,
+    listRecentSingleUserFeedPosts,
+    createSingleUserPost,
+    deleteSingleUserPost,
     createSingleUserAccount,
     authenticateSingleUser,
 };

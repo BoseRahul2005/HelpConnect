@@ -1,8 +1,81 @@
 const express =require ('express');
+const fs = require('fs');
 const app = express();
 const port = 8080;
 const path = require('path');
+const crypto = require('crypto');
+const multer = require('multer');
 const helpConnectDb = require('./database/mysql');
+
+const profilePostUploadDir = path.join(__dirname, 'public', 'uploads', 'profile-posts');
+
+fs.mkdirSync(profilePostUploadDir, { recursive: true });
+
+const allowedProfilePostMimeTypes = new Set([
+    'image/jpeg',
+    'image/png',
+    'image/gif',
+    'image/webp',
+    'image/avif',
+]);
+
+const profilePostUpload = multer({
+    storage: multer.diskStorage({
+        destination: (req, file, callback) => {
+            callback(null, profilePostUploadDir);
+        },
+        filename: (req, file, callback) => {
+            const fileExtension = path.extname(file.originalname).toLowerCase();
+            const safeBaseName = path.basename(file.originalname, fileExtension)
+                .replace(/[^a-z0-9_-]+/gi, '_')
+                .slice(0, 40) || 'image';
+            const uniqueSuffix = crypto.randomBytes(8).toString('hex');
+            callback(null, `${Date.now()}-${uniqueSuffix}-${safeBaseName}${fileExtension}`);
+        },
+    }),
+    limits: {
+        fileSize: 5 * 1024 * 1024,
+    },
+    fileFilter: (req, file, callback) => {
+        if (!allowedProfilePostMimeTypes.has(file.mimetype)) {
+            callback(new Error('Only image files are allowed.'));
+            return;
+        }
+
+        callback(null, true);
+    },
+});
+
+const profilePictureUploadDir = path.join(__dirname, 'public', 'uploads', 'profile-pictures');
+
+fs.mkdirSync(profilePictureUploadDir, { recursive: true });
+
+const profilePictureUpload = multer({
+    storage: multer.diskStorage({
+        destination: (req, file, callback) => {
+            callback(null, profilePictureUploadDir);
+        },
+        filename: (req, file, callback) => {
+            const fileExtension = path.extname(file.originalname).toLowerCase();
+            const safeBaseName = path.basename(file.originalname, fileExtension)
+                .replace(/[^a-z0-9_-]+/gi, '_')
+                .slice(0, 40) || 'profile';
+            const uniqueSuffix = crypto.randomBytes(8).toString('hex');
+            callback(null, `${Date.now()}-${uniqueSuffix}-${safeBaseName}${fileExtension}`);
+        },
+    }),
+    limits: {
+        fileSize: 5 * 1024 * 1024,
+    },
+    fileFilter: (req, file, callback) => {
+        if (!allowedProfilePostMimeTypes.has(file.mimetype)) {
+            callback(new Error('Only image files are allowed.'));
+            return;
+        }
+
+        callback(null, true);
+    },
+});
 
 app.use(express.urlencoded({ extended: true }));
 app.set('view engine', 'ejs');
@@ -80,11 +153,32 @@ async function getLoggedInNgo(req) {
     return helpConnectDb.getNgoById(ngoId);
 }
 
+async function getLoggedInUser(req) {
+    const cookies = parseCookies(req.headers.cookie || '');
+    const userId = cookies.userAuthId;
+
+    if (!userId) {
+        return null;
+    }
+
+    return helpConnectDb.getSingleUserById(userId);
+}
+
 function getNgoInitials(name) {
     const cleanedName = String(name || '').trim();
 
     if (!cleanedName) {
         return 'NG';
+    }
+
+    return cleanedName.slice(0, 2).toUpperCase();
+}
+
+function getUserInitials(name) {
+    const cleanedName = String(name || '').trim();
+
+    if (!cleanedName) {
+        return 'US';
     }
 
     return cleanedName.slice(0, 2).toUpperCase();
@@ -140,6 +234,10 @@ function formatCurrency(value) {
     }).format(Number(value || 0));
 }
 
+function formatDollarAmount(value) {
+    return `$${Number(value || 0).toLocaleString('en-US')}`;
+}
+
 function formatDateTime(value) {
     const dateValue = new Date(value);
 
@@ -154,6 +252,56 @@ function formatDateTime(value) {
     });
 }
 
+function formatProfilePostDate(value) {
+    const dateValue = new Date(value);
+
+    if (Number.isNaN(dateValue.getTime())) {
+        return 'Recently';
+    }
+
+    return dateValue.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+    });
+}
+
+function serializeForInlineScript(value) {
+    return JSON.stringify(value).replace(/</g, '\\u003c');
+}
+
+function parseFundRaiseGoal(value) {
+    const normalizedValue = String(value || '').trim();
+
+    if (!normalizedValue) {
+        return null;
+    }
+
+    const parsedValue = Number(normalizedValue);
+
+    if (!Number.isFinite(parsedValue) || parsedValue <= 0) {
+        return null;
+    }
+
+    return parsedValue;
+}
+
+function getProfilePostImageUrl(file) {
+    if (!file) {
+        return null;
+    }
+
+    return `/uploads/profile-posts/${file.filename}`;
+}
+
+function getProfilePictureUrl(file) {
+    if (!file) {
+        return null;
+    }
+
+    return `/uploads/profile-pictures/${file.filename}`;
+}
+
 function buildNgoProfileViewModel(ngo) {
     const posts = getNgoCollection(ngo.posts);
     const comments = getNgoCollection(ngo.comments);
@@ -162,6 +310,8 @@ function buildNgoProfileViewModel(ngo) {
     const savedItems = getNgoCollection(ngo.savedItems);
     const upvoted = getNgoCollection(ngo.upvoted);
     const history = getNgoCollection(ngo.history);
+    const followerCount = followers.length;
+    const donationCount = donations.length;
 
     const totalRaised = donations.reduce((sum, donation) => {
         const donationAmount = Number(donation.amount || donation.value || 0);
@@ -201,6 +351,83 @@ function buildNgoProfileViewModel(ngo) {
         recentUpvoted: upvoted.slice(0, 4),
         recentHistory,
         formatCurrency,
+        profileDisplayName: ngo.orgName,
+        profileSubtitle: ngoHandle,
+        profileStats: [
+            {
+                label: 'Followers',
+                value: String(followerCount),
+            },
+            {
+                label: 'Following',
+                value: '0',
+            },
+            {
+                label: 'Donations',
+                value: String(donationCount),
+            },
+            {
+                label: 'Fund Raised',
+                value: formatDollarAmount(totalRaised),
+            },
+        ],
+        profileStatusLabel: 'Showing all content',
+        profileEmptyTitle: "You haven't supported any cause yet",
+        profileEmptyCopy: [
+            "Once you donate or post in a community, it'll show up here.",
+            "You can also adjust what's visible from your settings.",
+        ],
+    };
+}
+
+function buildUserProfileViewModel(user, posts = []) {
+    const displayName = String(user.username || '').trim() || 'Profile';
+    const fullName = String(user.name || '').trim() || displayName;
+    const profilePosts = posts.map((post) => ({
+        id: post.id,
+        title: String(post.title || '').trim(),
+        body: String(post.body || '').trim(),
+        imageUrl: post.imageUrl,
+        imageName: post.imageName,
+        isFundraiser: Boolean(post.isFundraiser),
+        fundRaiseGoal: post.fundRaiseGoal,
+        fundRaiseGoalLabel: post.fundRaiseGoal !== null && post.fundRaiseGoal !== undefined
+            ? formatDollarAmount(post.fundRaiseGoal)
+            : null,
+        submittedAtLabel: formatProfilePostDate(post.submittedAt),
+    }));
+
+    return {
+        profileDisplayName: displayName,
+        profileSubtitle: fullName,
+        profilePictureUrl: user.profilePictureUrl || null,
+        profilePictureName: user.profilePictureName || null,
+        profilePosts,
+        profilePostCount: profilePosts.length,
+        profileStats: [
+            {
+                label: 'Followers',
+                value: '0',
+            },
+            {
+                label: 'Following',
+                value: '0',
+            },
+            {
+                label: 'Donations',
+                value: '0',
+            },
+            {
+                label: 'Fund Raised',
+                value: formatDollarAmount(0),
+            },
+        ],
+        profileStatusLabel: 'Showing all content',
+        profileEmptyTitle: "You haven't supported any cause yet",
+        profileEmptyCopy: [
+            "Once you donate or post in a community, it'll show up here.",
+            "You can also adjust what's visible from your settings.",
+        ],
     };
 }
 
@@ -214,11 +441,23 @@ function sanitizeNgoRecord(ngo) {
 }
 
 async function renderHomePage(req, res) {
-    const loggedInNgo = await getLoggedInNgo(req);
+    const [loggedInNgo, loggedInUser] = await Promise.all([
+        getLoggedInNgo(req),
+        getLoggedInUser(req),
+    ]);
+
+    const homeFeedPosts = await helpConnectDb.listRecentSingleUserFeedPosts(12);
 
     return res.render('home', {
-        loggedInNgo,
+        loggedInNgo: loggedInNgo ? sanitizeNgoRecord(loggedInNgo) : null,
+        loggedInUser: loggedInUser ? {
+            id: loggedInUser.id,
+            name: loggedInUser.name,
+            profilePictureUrl: loggedInUser.profilePictureUrl || null,
+        } : null,
         ngoInitials: loggedInNgo ? getNgoInitials(loggedInNgo.orgName) : null,
+        userInitials: loggedInUser ? getUserInitials(loggedInUser.name) : null,
+        homeFeedPostsJson: serializeForInlineScript(homeFeedPosts),
     });
 }
 
@@ -232,6 +471,76 @@ async function renderNgoProfilePage(req, res) {
     return res.render('profile-page', buildNgoProfileViewModel(ngo));
 }
 
+async function renderUserProfilePage(req, res) {
+    const user = await getLoggedInUser(req);
+
+    if (!user) {
+        return res.redirect('/user/login');
+    }
+
+    const posts = await helpConnectDb.listSingleUserPosts(user.id);
+
+    return res.render('profile-page', buildUserProfileViewModel(user, posts));
+}
+
+function handleProfilePictureUpload(req, res, next) {
+    profilePictureUpload.single('profilePicture')(req, res, (error) => {
+        if (!error) {
+            next();
+            return;
+        }
+
+        if (error.code === 'LIMIT_FILE_SIZE') {
+            return res.status(400).json({ error: 'Profile picture must be 5MB or smaller.' });
+        }
+
+        return res.status(400).json({ error: error.message || 'Unable to upload the profile picture.' });
+    });
+}
+
+function handleProfilePostUpload(req, res, next) {
+    profilePostUpload.single('image')(req, res, (error) => {
+        if (!error) {
+            next();
+            return;
+        }
+
+        if (error.code === 'LIMIT_FILE_SIZE') {
+            return res.status(400).json({ error: 'Image must be 5MB or smaller.' });
+        }
+
+        return res.status(400).json({ error: error.message || 'Unable to upload the image.' });
+    });
+}
+
+async function removeUploadedProfilePostImage(filePath) {
+    if (!filePath) {
+        return;
+    }
+
+    const resolvedPath = path.join(__dirname, 'public', filePath.replace(/^\//, ''));
+
+    try {
+        await fs.promises.unlink(resolvedPath);
+    } catch {
+        // Ignore missing files so deletes remain resilient.
+    }
+}
+
+async function removeUploadedProfilePicture(filePath) {
+    if (!filePath) {
+        return;
+    }
+
+    const resolvedPath = path.join(__dirname, 'public', filePath.replace(/^\//, ''));
+
+    try {
+        await fs.promises.unlink(resolvedPath);
+    } catch {
+        // Ignore missing files so updates remain resilient.
+    }
+}
+
 // Routes
 app.get('/', async (req, res) => {
     await renderHomePage(req, res);
@@ -239,6 +548,14 @@ app.get('/', async (req, res) => {
 
 app.get('/home', async (req, res) => {
     await renderHomePage(req, res);
+});
+
+app.get('/profile', async (req, res) => {
+    await renderUserProfilePage(req, res);
+});
+
+app.get('/user/profile', async (req, res) => {
+    await renderUserProfilePage(req, res);
 });
 
 app.get('/dashboard', async (req, res) => {
@@ -255,6 +572,43 @@ app.get('/dashboard/get-started', (req, res) => {
 
 app.get('/ngo/profile', async (req, res) => {
     await renderNgoProfilePage(req, res);
+});
+
+app.post('/profile/picture', handleProfilePictureUpload, async (req, res) => {
+    const user = await getLoggedInUser(req);
+
+    if (!user) {
+        return res.status(401).json({ error: 'Please log in again to update your profile picture.' });
+    }
+
+    if (!req.file) {
+        return res.status(400).json({ error: 'Please choose an image file.' });
+    }
+
+    const profilePictureUrl = getProfilePictureUrl(req.file);
+
+    try {
+        const updated = await helpConnectDb.updateSingleUserProfilePicture(user.id, profilePictureUrl, req.file.originalname);
+
+        if (!updated) {
+            await removeUploadedProfilePicture(profilePictureUrl);
+            return res.status(404).json({ error: 'Profile not found.' });
+        }
+
+        if (user.profilePictureUrl && user.profilePictureUrl !== profilePictureUrl) {
+            await removeUploadedProfilePicture(user.profilePictureUrl);
+        }
+
+        return res.json({
+            success: true,
+            profilePictureUrl,
+            profilePictureName: req.file.originalname,
+        });
+    } catch (error) {
+        await removeUploadedProfilePicture(profilePictureUrl);
+        console.error('Failed to update profile picture:', error);
+        return res.status(500).json({ error: 'Unable to update your profile picture right now.' });
+    }
 });
 
 // NGO Routes
@@ -417,7 +771,7 @@ app.post('/user/signup', async (req, res) => {
     }
 
     try {
-        await helpConnectDb.createSingleUserAccount({
+        const createdUser = await helpConnectDb.createSingleUserAccount({
             name,
             username,
             emailOrMobile,
@@ -425,7 +779,14 @@ app.post('/user/signup', async (req, res) => {
             birthday,
         });
 
-        return res.redirect('/user/login');
+        res.cookie('userAuthId', createdUser.id, {
+            httpOnly: true,
+            sameSite: 'lax',
+            path: '/',
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
+
+        return res.redirect('/home');
     } catch (error) {
         if (error.code === 'SINGLE_USER_EXISTS') {
             return res.status(409).render('user-signup', {
@@ -474,6 +835,95 @@ app.post('/user/login', async (req, res) => {
     res.cookie('userAuthId', authenticatedUser.id, cookieOptions);
 
     return res.redirect('/home');
+});
+
+app.post('/profile/posts', handleProfilePostUpload, async (req, res) => {
+    const user = await getLoggedInUser(req);
+
+    if (!user) {
+        return res.status(401).json({ error: 'Please log in again to create posts.' });
+    }
+
+    const { title, body } = req.body;
+    const imageUrl = getProfilePostImageUrl(req.file);
+    const imageName = req.file ? req.file.originalname : null;
+    const fundRaiseGoal = parseFundRaiseGoal(req.body.fundRaiseGoal);
+    const isFundraiser = String(req.body.isFundraiser || '').trim() === '1' || fundRaiseGoal !== null;
+
+    if (String(req.body.isFundraiser || '').trim() === '1' && fundRaiseGoal === null) {
+        await removeUploadedProfilePostImage(imageUrl);
+        return res.status(400).json({ error: 'Please enter a valid fundraiser goal.' });
+    }
+
+    try {
+        const createdPost = await helpConnectDb.createSingleUserPost({
+            userId: user.id,
+            title,
+            body,
+            imagePath: imageUrl,
+            imageName,
+            isFundraiser,
+            fundRaiseGoal,
+        });
+
+        return res.status(201).json({
+            post: {
+                ...createdPost,
+                submittedAtLabel: formatProfilePostDate(createdPost.submittedAt),
+            },
+        });
+    } catch (error) {
+        if (req.file) {
+            await removeUploadedProfilePostImage(imageUrl);
+        }
+
+        if (error.code === 'POST_BODY_REQUIRED') {
+            return res.status(400).json({ error: 'Post body is required.' });
+        }
+
+        if (error.code === 'POST_INVALID_USER') {
+            return res.status(400).json({ error: 'Invalid user session.' });
+        }
+
+        if (error.code === 'POST_GOAL_REQUIRED') {
+            return res.status(400).json({ error: 'Please enter a valid fundraiser goal.' });
+        }
+
+        console.error('Failed to create single user post:', error);
+        return res.status(500).json({ error: 'Unable to create the post right now.' });
+    }
+});
+
+app.delete('/profile/posts/:postId', async (req, res) => {
+    const user = await getLoggedInUser(req);
+
+    if (!user) {
+        return res.status(401).json({ error: 'Please log in again to delete posts.' });
+    }
+
+    const postId = Number(req.params.postId);
+
+    if (!Number.isInteger(postId) || postId <= 0) {
+        return res.status(400).json({ error: 'Invalid post id.' });
+    }
+
+    const post = await helpConnectDb.getSingleUserPostById(postId);
+
+    if (!post || Number(post.userId) !== Number(user.id)) {
+        return res.status(404).json({ error: 'Post not found.' });
+    }
+
+    const deleted = await helpConnectDb.deleteSingleUserPost(user.id, postId);
+
+    if (!deleted) {
+        return res.status(404).json({ error: 'Post not found.' });
+    }
+
+    if (post.imageUrl) {
+        await removeUploadedProfilePostImage(post.imageUrl);
+    }
+
+    return res.json({ success: true });
 });
 
 async function startServer() {

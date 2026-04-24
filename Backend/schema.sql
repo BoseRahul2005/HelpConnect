@@ -37,6 +37,8 @@ CREATE TABLE IF NOT EXISTS single_users (
 	email_or_mobile VARCHAR(255) NOT NULL,
 	password_hash VARCHAR(255) NOT NULL,
 	password_salt VARCHAR(64) NOT NULL,
+	profile_picture_path VARCHAR(255) DEFAULT NULL,
+	profile_picture_name VARCHAR(255) DEFAULT NULL,
 	birthday DATE NOT NULL,
 	submitted_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -44,4 +46,20 @@ CREATE TABLE IF NOT EXISTS single_users (
 	PRIMARY KEY (id),
 	UNIQUE KEY unique_single_user_username (username),
 	UNIQUE KEY unique_single_user_contact (email_or_mobile)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS single_user_posts (
+	id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+	user_id BIGINT UNSIGNED NOT NULL,
+	title VARCHAR(160) NOT NULL DEFAULT '',
+	body TEXT NOT NULL,
+	image_path VARCHAR(255) DEFAULT NULL,
+	image_name VARCHAR(255) DEFAULT NULL,
+	is_fundraiser TINYINT(1) NOT NULL DEFAULT 0,
+	fund_raise_goal DECIMAL(12,2) DEFAULT NULL,
+	submitted_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+	PRIMARY KEY (id),
+	KEY idx_single_user_posts_user_id (user_id, submitted_at),
+	CONSTRAINT fk_single_user_posts_user FOREIGN KEY (user_id) REFERENCES single_users (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
