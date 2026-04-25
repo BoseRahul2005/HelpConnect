@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NGO Log In - HelpConnect</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="NGO-login-page.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-container">
+            <div class="logo-section">
+                <span class="logo-icon">💚</span>
+                <h1 class="logo-text">HelpConnect</h1>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-container">
+        <div class="login-card">
+            <!-- Header Icon -->
+            <div class="card-header">
+                <div class="icon-circle">
+                    <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 21h18M3 10h18M5 6h14M5 6V3h14v3M9 21v-8M15 21v-8M9 13h6v8H9z"/>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Form Title -->
+            <div class="form-header">
+                <h1 class="form-title">NGO Log In</h1>
+                <p class="form-subtitle">Join our community of changemakers</p>
+            </div>
+
+            <!-- Login Form -->
+            <form class="login-form" id="ngoLoginForm">
+                <!-- Email Address -->
+                <div class="form-group">
+                    <label for="email" class="form-label">Email Address</label>
+                    <input 
+                        type="email" 
+                        id="email" 
+                        name="email" 
+                        class="form-input" 
+                        placeholder="your.email@organization.com"
+                        required
+                    >
+                    <span class="error-message" id="emailError"></span>
+                </div>
+
+                <!-- Password -->
+                <div class="form-group">
+                    <label for="password" class="form-label">Password</label>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        name="password" 
+                        class="form-input" 
+                        placeholder="Enter your password"
+                        required
+                    >
+                    <span class="error-message" id="passwordError"></span>
+                </div>
+
+                <!-- Remember Me -->
+                <div class="form-group checkbox-group">
+                    <input 
+                        type="checkbox" 
+                        id="rememberMe" 
+                        name="rememberMe" 
+                        class="form-checkbox"
+                    >
+                    <label for="rememberMe" class="checkbox-label">
+                        Remember me
+                    </label>
+                </div>
+
+                <!-- Forgot Password Link -->
+                <div class="forgot-password-container">
+                    <a href="#" class="forgot-password-link">Forgot your password?</a>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="btn-primary btn-submit">Log In to Your Account</button>
+            </form>
+
+            <!-- Footer Links -->
+            <div class="form-footer">
+                <p class="footer-text">
+                    Don't have an account? <a href="NGO-signup-page.html" class="footer-link">Sign Up</a>
+                </p>
+                <p class="footer-text">
+                    <a href="get-started.html" class="footer-link">← Back to Selection</a>
+                </p>
+            </div>
+        </div>
+    </main>
+
+    <script src="NGO-login-page.js"></script>
+</body>
+</html>

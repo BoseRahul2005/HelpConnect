@@ -194,6 +194,368 @@ function getNgoHandle(name) {
     return slug ? `ngo/${slug}` : 'ngo/profile';
 }
 
+function normalizeNgoLookupKey(value) {
+    return String(value || '')
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '');
+}
+
+function hashText(value) {
+    let hash = 0;
+    const source = String(value || 'helpconnect');
+
+    for (let index = 0; index < source.length; index += 1) {
+        hash = (hash * 31 + source.charCodeAt(index)) >>> 0;
+    }
+
+    return hash;
+}
+
+function pickSeededValue(seed, values) {
+    return values[seed % values.length];
+}
+
+function createSvgDataUri(svgMarkup) {
+    return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svgMarkup)}`;
+}
+
+function normalizeWebsiteUrl(value) {
+    const websiteValue = String(value || '').trim();
+
+    if (!websiteValue) {
+        return null;
+    }
+
+    if (/^https?:\/\//i.test(websiteValue)) {
+        return websiteValue;
+    }
+
+    return `https://${websiteValue}`;
+}
+
+function getNgoTagline(orgType, displayName) {
+    const typeKey = String(orgType || '').trim().toLowerCase();
+    const taglines = {
+        healthcare: 'Bringing life-saving healthcare to communities in need.',
+        education: 'Opening doors to learning opportunities for every child.',
+        environment: 'Protecting nature and building a greener future.',
+        humanitarian: 'Delivering urgent relief with dignity and speed.',
+        community: 'Strengthening neighborhoods through local action.',
+        women: 'Creating safer spaces and stronger opportunities for women.',
+        children: 'Helping children grow, learn, and stay safe.',
+        other: 'Supporting communities with care and consistency.',
+    };
+
+    return taglines[typeKey] || `Supporting communities through the work of ${displayName}.`;
+}
+
+function buildNgoArtwork(displayName) {
+    const seed = hashText(displayName);
+    const coverPalettes = [
+        ['#0f766e', '#14b8a6', '#052e16'],
+        ['#2f9d62', '#1d7b4a', '#d1fae5'],
+        ['#1d4ed8', '#38bdf8', '#dbeafe'],
+        ['#a855f7', '#ec4899', '#fae8ff'],
+        ['#c2410c', '#f59e0b', '#ffedd5'],
+    ];
+    const avatarPalettes = [
+        ['#2f9d62', '#1d7b4a'],
+        ['#2563eb', '#0ea5e9'],
+        ['#db2777', '#9333ea'],
+        ['#ea580c', '#f59e0b'],
+        ['#0f766e', '#22c55e'],
+    ];
+    const [coverStart, coverMid, coverEnd] = pickSeededValue(seed, coverPalettes);
+    const [avatarStart, avatarEnd] = pickSeededValue(seed >> 2, avatarPalettes);
+    const initials = getNgoInitials(displayName);
+    const coverWaveOffset = 30 + (seed % 70);
+    const coverBlobOffset = 50 + ((seed >> 3) % 110);
+    const coverSvg = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 420" fill="none">
+            <defs>
+                <linearGradient id="coverGradient" x1="0" y1="0" x2="1200" y2="420" gradientUnits="userSpaceOnUse">
+                    <stop offset="0%" stop-color="${coverStart}" />
+                    <stop offset="58%" stop-color="${coverMid}" />
+                    <stop offset="100%" stop-color="${coverEnd}" />
+                </linearGradient>
+                <radialGradient id="coverGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(940 60) rotate(90) scale(250 280)">
+                    <stop stop-color="#ffffff" stop-opacity="0.22" />
+                    <stop offset="1" stop-color="#ffffff" stop-opacity="0" />
+                </radialGradient>
+            </defs>
+            <rect width="1200" height="420" rx="32" fill="url(#coverGradient)" />
+            <circle cx="${110 + coverBlobOffset}" cy="${90 + (seed % 45)}" r="112" fill="#ffffff" fill-opacity="0.12" />
+            <circle cx="${930 - coverBlobOffset}" cy="${250 - (seed % 50)}" r="160" fill="#ffffff" fill-opacity="0.08" />
+            <circle cx="1040" cy="72" r="118" fill="url(#coverGlow)" />
+            <path d="M0 ${270 + coverWaveOffset}C140 ${230 + coverWaveOffset} 250 ${330 - coverWaveOffset} 420 ${300 + coverWaveOffset}C560 ${270 + coverWaveOffset} 680 ${190 + coverWaveOffset} 820 ${220 + coverWaveOffset}C980 ${245 + coverWaveOffset} 1080 ${345 - coverWaveOffset} 1200 ${300 + coverWaveOffset}V420H0V${270 + coverWaveOffset}Z" fill="#ffffff" fill-opacity="0.10" />
+            <path d="M0 ${300 + coverWaveOffset / 2}C160 ${260 + coverWaveOffset / 2} 280 ${360 - coverWaveOffset / 2} 430 ${332 + coverWaveOffset / 2}C590 ${300 + coverWaveOffset / 2} 720 ${220 + coverWaveOffset / 2} 860 ${246 + coverWaveOffset / 2}C1010 ${272 + coverWaveOffset / 2} 1100 ${360 - coverWaveOffset / 2} 1200 ${324 + coverWaveOffset / 2}V420H0V${300 + coverWaveOffset / 2}Z" fill="#052e16" fill-opacity="0.12" />
+        </svg>
+    `;
+    const avatarSvg = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none">
+            <defs>
+                <linearGradient id="avatarGradient" x1="0" y1="0" x2="256" y2="256" gradientUnits="userSpaceOnUse">
+                    <stop offset="0%" stop-color="${avatarStart}" />
+                    <stop offset="100%" stop-color="${avatarEnd}" />
+                </linearGradient>
+            </defs>
+            <rect width="256" height="256" rx="128" fill="url(#avatarGradient)" />
+            <circle cx="128" cy="96" r="58" fill="#ffffff" fill-opacity="0.12" />
+            <circle cx="86" cy="164" r="22" fill="#ffffff" fill-opacity="0.12" />
+            <circle cx="172" cy="168" r="28" fill="#ffffff" fill-opacity="0.1" />
+            <text x="128" y="145" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="84" font-weight="800" letter-spacing="2" fill="#ffffff">${initials}</text>
+        </svg>
+    `;
+
+    return {
+        coverPhotoUrl: createSvgDataUri(coverSvg),
+        profilePhotoUrl: createSvgDataUri(avatarSvg),
+        accentColor: coverMid,
+        seed,
+    };
+}
+
+function normalizeNgoPublicPost(post, index) {
+    const source = typeof post === 'object' && post !== null ? post : { body: String(post || '') };
+    const title = String(source.title || source.heading || '').trim() || 'Community update';
+    const body = String(source.body || source.description || '').trim() || 'No details available yet.';
+    const goalValue = source.fundRaiseGoal ?? source.goal ?? source.target ?? null;
+    const parsedGoal = goalValue === null || goalValue === undefined || goalValue === ''
+        ? null
+        : Number(goalValue);
+    const parsedRaisedAmount = Number(
+        source.raisedAmount ?? source.amountRaised ?? source.progressRaised ?? source.currentAmount ?? (parsedGoal ? Math.round(parsedGoal * 0.72) : 0)
+    );
+    const submittedAt = source.submittedAt || source.createdAt || source.date || new Date(Date.now() - index * 86400000).toISOString();
+    const imageUrl = source.imageUrl || source.imagePath || null;
+
+    return {
+        id: source.id ?? `post-${index}`,
+        title,
+        body,
+        imageUrl,
+        imageName: source.imageName || null,
+        isFundraiser: Boolean(source.isFundraiser) || parsedGoal !== null,
+        fundRaiseGoal: parsedGoal,
+        fundRaiseGoalLabel: parsedGoal !== null ? formatDollarAmount(parsedGoal) : null,
+        raisedAmount: Number.isFinite(parsedRaisedAmount) ? parsedRaisedAmount : 0,
+        raisedAmountLabel: formatDollarAmount(Number.isFinite(parsedRaisedAmount) ? parsedRaisedAmount : 0),
+        submittedAt,
+        submittedAtLabel: formatDateTime(submittedAt),
+        progressPercent: parsedGoal ? Math.min(((Number.isFinite(parsedRaisedAmount) ? parsedRaisedAmount : 0) / parsedGoal) * 100, 100) : 0,
+    };
+}
+
+function normalizeNgoPublicDonation(donation, index) {
+    const source = typeof donation === 'object' && donation !== null ? donation : { note: String(donation || '') };
+    const parsedAmount = Number(source.amount ?? source.value ?? source.total ?? 0);
+    const submittedAt = source.submittedAt || source.createdAt || source.date || new Date(Date.now() - index * 172800000).toISOString();
+    const donorName = String(source.donorName || source.name || source.donor || 'Anonymous supporter').trim() || 'Anonymous supporter';
+
+    return {
+        id: source.id ?? `donation-${index}`,
+        donorName,
+        amount: Number.isFinite(parsedAmount) ? parsedAmount : 0,
+        amountLabel: formatDollarAmount(Number.isFinite(parsedAmount) ? parsedAmount : 0),
+        note: String(source.note || source.message || source.body || '').trim(),
+        submittedAt,
+        submittedAtLabel: formatDateTime(submittedAt),
+    };
+}
+
+function buildFallbackNgoProfileData(displayName, orgType) {
+    const seed = hashText(displayName);
+    const cityOptions = [
+        'Mumbai, India',
+        'Delhi, India',
+        'Bengaluru, India',
+        'Chennai, India',
+        'Hyderabad, India',
+        'Pune, India',
+    ];
+    const inferredType = orgType || pickSeededValue(seed, ['healthcare', 'education', 'community', 'humanitarian', 'children', 'women', 'environment']);
+    const baseWebsiteSlug = String(displayName || 'ngo')
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '');
+    const totalRaised = 125000 + (seed % 60000);
+    const donationAmounts = [
+        Math.round(totalRaised * 0.41),
+        Math.round(totalRaised * 0.27),
+        Math.round(totalRaised * 0.18),
+    ];
+    donationAmounts.push(Math.max(totalRaised - donationAmounts.reduce((sum, amount) => sum + amount, 0), 5000));
+
+    const posts = [
+        normalizeNgoPublicPost({
+            id: `${seed}-post-1`,
+            title: 'Help Needed for Child Heart Surgery',
+            body: `${displayName} is rallying support for an urgent heart surgery case. Every contribution closes the gap faster.`,
+            isFundraiser: true,
+            fundRaiseGoal: 25000,
+            raisedAmount: 18500,
+            submittedAt: new Date(Date.now() - 172800000).toISOString(),
+        }, 1),
+        normalizeNgoPublicPost({
+            id: `${seed}-post-2`,
+            title: 'Community impact update',
+            body: `${displayName} shared food, medical support, and volunteer help with families in need this week.`,
+            submittedAt: new Date(Date.now() - 432000000).toISOString(),
+        }, 2),
+        normalizeNgoPublicPost({
+            id: `${seed}-post-3`,
+            title: 'Volunteer drive this weekend',
+            body: 'Join the next volunteer drive to help expand our on-ground support and outreach programs.',
+            submittedAt: new Date(Date.now() - 864000000).toISOString(),
+        }, 3),
+    ];
+
+    const donations = donationAmounts.map((amount, index) => normalizeNgoPublicDonation({
+        id: `${seed}-donation-${index + 1}`,
+        donorName: ['Anonymous donor', 'Priya Sharma', 'Amit Verma', 'Rohan Patel'][index] || `Supporter ${index + 1}`,
+        amount,
+        note: ['For urgent care support', 'Keep up the good work', 'Community relief drive', 'Monthly giving'][index] || '',
+        submittedAt: new Date(Date.now() - (index + 1) * 259200000).toISOString(),
+    }, index + 1));
+
+    const followers = Array.from({ length: 4 }, (_, index) => ({
+        id: `${seed}-follower-${index + 1}`,
+        name: ['Nandini', 'Kabir', 'Saanvi', 'Arjun'][index] || `Follower ${index + 1}`,
+    }));
+
+    return {
+        orgType: inferredType,
+        website: `${baseWebsiteSlug || 'helpconnect'}.org`,
+        location: pickSeededValue(seed >> 1, cityOptions),
+        foundedLabel: `Founded ${2010 + (seed % 13)}`,
+        profileStatusLabel: 'Demo profile preview',
+        followerCount: 12000 + (seed % 6000),
+        donorCount: donations.length,
+        totalRaised,
+        activePostCount: posts.length,
+        posts,
+        donations,
+        followers,
+    };
+}
+
+function buildPublicNgoProfileViewModel(ngo, requestedName) {
+    const displayName = String((ngo && ngo.orgName) || requestedName || 'NGO Profile').trim() || 'NGO Profile';
+    const seed = hashText(displayName);
+    const artwork = buildNgoArtwork(displayName);
+    const hasRealRecord = Boolean(ngo);
+    const orgType = (ngo && ngo.orgType) || null;
+    const fallbackData = buildFallbackNgoProfileData(displayName, orgType);
+    const website = normalizeWebsiteUrl((ngo && ngo.website) || null);
+    const profileLocation = pickSeededValue(seed >> 1, [
+        'Mumbai, India',
+        'Delhi, India',
+        'Bengaluru, India',
+        'Chennai, India',
+        'Hyderabad, India',
+        'Pune, India',
+    ]);
+    const profileFoundedLabel = ngo && ngo.foundedOn
+        ? `Founded ${new Date(ngo.foundedOn).getFullYear()}`
+        : `Founded ${2010 + (seed % 13)}`;
+    const profileSubtitle = getNgoTagline(orgType || fallbackData.orgType, displayName);
+    const rawPosts = hasRealRecord ? getNgoCollection(ngo.posts) : [];
+    const rawDonations = hasRealRecord ? getNgoCollection(ngo.donations) : [];
+    const rawFollowers = hasRealRecord ? getNgoCollection(ngo.followers) : [];
+    const rawHistory = hasRealRecord ? getNgoCollection(ngo.history) : [];
+    const normalizedPosts = rawPosts.length
+        ? rawPosts.map((post, index) => normalizeNgoPublicPost(post, index + 1))
+        : fallbackData.posts;
+    const normalizedDonations = rawDonations.length
+        ? rawDonations.map((donation, index) => normalizeNgoPublicDonation(donation, index + 1))
+        : fallbackData.donations;
+    const normalizedFollowers = rawFollowers.length
+        ? rawFollowers
+        : fallbackData.followers;
+    const followerCount = rawFollowers.length || fallbackData.followerCount;
+    const donorCount = normalizedDonations.length;
+    const activePostCount = normalizedPosts.length;
+    const totalRaised = normalizedDonations.reduce((sum, donation) => sum + Number(donation.amount || 0), 0) || fallbackData.totalRaised;
+    const fundraisingPosts = normalizedPosts.filter((post) => post.isFundraiser || post.fundRaiseGoal);
+    const recentPosts = normalizedPosts.slice(0, 3);
+    const recentDonations = normalizedDonations.slice(0, 4);
+    const recentHistory = rawHistory.length ? rawHistory.slice(0, 4) : [];
+
+    return {
+        profileDisplayName: displayName,
+        profileSubtitle,
+        profileCoverPhotoUrl: artwork.coverPhotoUrl,
+        profileAvatarPhotoUrl: artwork.profilePhotoUrl,
+        profileInitials: getNgoInitials(displayName),
+        profileLocation,
+        profileWebsiteLabel: website ? website.replace(/^https?:\/\//i, '') : fallbackData.website,
+        profileWebsiteUrl: website || `https://${fallbackData.website}`,
+        profileFoundedLabel,
+        profileStatusLabel: hasRealRecord ? 'Showing live NGO content' : fallbackData.profileStatusLabel,
+        profileStats: [
+            {
+                label: 'Followers',
+                value: followerCount.toLocaleString('en-US'),
+            },
+            {
+                label: 'Donors',
+                value: donorCount.toLocaleString('en-US'),
+            },
+            {
+                label: 'Fund Raised',
+                value: formatDollarAmount(totalRaised),
+            },
+            {
+                label: 'Active Posts',
+                value: activePostCount.toLocaleString('en-US'),
+            },
+        ],
+        profilePosts: normalizedPosts,
+        profileDonations: normalizedDonations,
+        profileFundraisers: fundraisingPosts,
+        profileOverviewPosts: recentPosts,
+        profileOverviewDonations: recentDonations,
+        profileAboutItems: [
+            {
+                label: 'Organization Type',
+                value: getNgoTypeLabel(orgType || fallbackData.orgType),
+            },
+            {
+                label: 'Location',
+                value: profileLocation,
+            },
+            {
+                label: 'Website',
+                value: website ? website.replace(/^https?:\/\//i, '') : fallbackData.website,
+                href: website || `https://${fallbackData.website}`,
+            },
+            {
+                label: 'Founded',
+                value: profileFoundedLabel,
+            },
+            {
+                label: 'Supporters',
+                value: followerCount.toLocaleString('en-US'),
+            },
+            {
+                label: 'Donations',
+                value: donorCount.toLocaleString('en-US'),
+            },
+        ],
+        profileHistory: recentHistory,
+        profileEmptyTitle: 'Nothing published yet',
+        profileEmptyCopy: [
+            'This NGO has no published posts yet.',
+            'Once they start sharing updates or donations, they will appear here.',
+        ],
+        profileDataSeed: seed,
+        profileOrgType: orgType || fallbackData.orgType,
+        profileHasLiveRecord: hasRealRecord,
+        profileNormalizedFollowers: normalizedFollowers,
+    };
+}
+
 function getNgoTypeLabel(orgType) {
     const labels = {
         education: 'Education',
@@ -471,6 +833,14 @@ async function renderNgoProfilePage(req, res) {
     return res.render('profile-page', buildNgoProfileViewModel(ngo));
 }
 
+async function renderPublicNgoProfilePage(req, res) {
+    const requestedName = String(req.params.ngoName || '').trim();
+    const ngoAccounts = await helpConnectDb.listNgoAccounts();
+    const matchedNgo = ngoAccounts.find((account) => normalizeNgoLookupKey(account.orgName) === normalizeNgoLookupKey(requestedName)) || null;
+
+    return res.render('ngo-profile', buildPublicNgoProfileViewModel(matchedNgo ? sanitizeNgoRecord(matchedNgo) : null, requestedName));
+}
+
 async function renderUserProfilePage(req, res) {
     const user = await getLoggedInUser(req);
 
@@ -572,6 +942,10 @@ app.get('/dashboard/get-started', (req, res) => {
 
 app.get('/ngo/profile', async (req, res) => {
     await renderNgoProfilePage(req, res);
+});
+
+app.get('/ngo/profile/:ngoName', async (req, res) => {
+    await renderPublicNgoProfilePage(req, res);
 });
 
 app.post('/profile/picture', handleProfilePictureUpload, async (req, res) => {

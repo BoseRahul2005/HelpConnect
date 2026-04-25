@@ -784,6 +784,27 @@ body {
     gap: 12px;
 }
 
+.post-author-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    color: inherit;
+    text-decoration: none;
+    border-radius: 12px;
+    transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.post-author-link:hover {
+    color: var(--primary-green);
+    transform: translateY(-1px);
+}
+
+.post-author-link:focus-visible {
+    outline: 2px solid rgba(46, 125, 50, 0.24);
+    outline-offset: 4px;
+}
+
 .post-avatar {
     width: 44px;
     height: 44px;
@@ -820,6 +841,10 @@ body {
     font-weight: 600;
     color: var(--text-dark);
     font-size: 14px;
+}
+
+.post-author-link:hover .post-ngo-name {
+    color: var(--primary-green);
 }
 
 .post-more-btn {
@@ -1079,10 +1104,35 @@ body {
     flex: 1;
 }
 
+.ngo-link {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    color: inherit;
+    text-decoration: none;
+    border-radius: 10px;
+    transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.ngo-link:hover {
+    color: var(--primary-green);
+    transform: translateY(-1px);
+}
+
+.ngo-link:focus-visible {
+    outline: 2px solid rgba(46, 125, 50, 0.24);
+    outline-offset: 3px;
+}
+
 .ngo-name {
     font-weight: 700;
     font-size: 13px;
     color: var(--text-dark);
+}
+
+.ngo-link:hover .ngo-name,
+.ngo-link:hover .ngo-followers {
+    color: var(--primary-green);
 }
 
 .ngo-followers {

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Account - HelpConnect</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="SU-signup-page.css">
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <!-- Header Section -->
+            <div class="header">
+                <div class="icon-circle">
+                    <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                </div>
+                <h1 class="form-title">Create Your Account</h1>
+                <p class="form-subtitle">Join HelpConnect and start supporting causes.</p>
+            </div>
+
+            <!-- Form Section -->
+            <form id="signupForm" class="signup-form">
+                <!-- Name Field -->
+                <div class="form-group">
+                    <label for="name" class="form-label">Name <span class="required">*</span></label>
+                    <input
+                        type="text"
+                        id="name"
+                        name="name"
+                        class="form-input"
+                        placeholder="Jane Doe"
+                        required>
+                    <span class="error-message" id="nameError"></span>
+                </div>
+
+                <!-- Username Field -->
+                <div class="form-group">
+                    <label for="username" class="form-label">Username <span class="required">*</span></label>
+                    <input
+                        type="text"
+                        id="username"
+                        name="username"
+                        class="form-input"
+                        placeholder="janedoe"
+                        required>
+                    <span class="error-message" id="usernameError"></span>
+                </div>
+
+                <!-- Email or Mobile Number Field -->
+                <div class="form-group">
+                    <label for="emailOrMobile" class="form-label">Email or Mobile Number <span class="required">*</span></label>
+                    <input
+                        type="text"
+                        id="emailOrMobile"
+                        name="emailOrMobile"
+                        class="form-input"
+                        placeholder="you@example.com or +1234567890"
+                        required>
+                    <span class="error-message" id="emailOrMobileError"></span>
+                </div>
+
+                <!-- Password Field -->
+                <div class="form-group">
+                    <div class="password-header">
+                        <label for="password" class="form-label">Password <span class="required">*</span></label>
+                    </div>
+                    <div class="password-wrapper">
+                        <input
+                            type="password"
+                            id="password"
+                            name="password"
+                            class="form-input"
+                            placeholder="At least 6 characters"
+                            required>
+                        <button
+                            type="button"
+                            id="togglePassword"
+                            class="password-toggle"
+                            aria-label="Toggle password visibility">
+                            <svg class="toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                        </button>
+                    </div>
+                    <span class="error-message" id="passwordError"></span>
+                </div>
+
+                <!-- Birthday Section -->
+                <div class="form-group">
+                    <label class="form-label">Birthday <span class="required">*</span></label>
+                    <div class="birthday-container">
+                        <div class="birthday-field">
+                            <select id="month" name="month" class="form-select" required>
+                                <option value="">Month</option>
+                                <option value="01">January</option>
+                                <option value="02">February</option>
+                                <option value="03">March</option>
+                                <option value="04">April</option>
+                                <option value="05">May</option>
+                                <option value="06">June</option>
+                                <option value="07">July</option>
+                                <option value="08">August</option>
+                                <option value="09">September</option>
+                                <option value="10">October</option>
+                                <option value="11">November</option>
+                                <option value="12">December</option>
+                            </select>
+                        </div>
+                        <div class="birthday-field">
+                            <select id="day" name="day" class="form-select" required>
+                                <option value="">Day</option>
+                            </select>
+                        </div>
+                        <div class="birthday-field">
+                            <select id="year" name="year" class="form-select" required>
+                                <option value="">Year</option>
+                            </select>
+                        </div>
+                    </div>
+                    <span class="error-message" id="birthdayError"></span>
+                </div>
+
+                <!-- Create Account Button -->
+                <button type="submit" class="btn-submit">Create Account</button>
+            </form>
+
+            <!-- Footer Links -->
+            <div class="form-footer">
+                <p class="footer-text">
+                    Already have an account?
+                    <a href="SU-login-page.html" class="footer-link">Log in</a>
+                </p>
+                <a href="get-started.html" class="footer-link back-link">← Back to options</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="SU-signup-page.js"></script>
+</body>
+</html>

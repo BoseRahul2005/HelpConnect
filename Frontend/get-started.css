@@ -1,0 +1,386 @@
+/* ========================================
+   Root & Global Styles
+   ======================================== */
+:root {
+    --primary-green: #10b981;
+    --light-green: #d1fae5;
+    --light-blue-green: #cffafe;
+    --text-dark: #1f2937;
+    --text-muted: #6b7280;
+    --background: #f9fafb;
+    --white: #ffffff;
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    --transition: all 0.3s ease;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background-color: var(--background);
+    color: var(--text-dark);
+    line-height: 1.6;
+    overflow-x: hidden;
+}
+
+/* ========================================
+   Header
+   ======================================== */
+.header {
+    background-color: var(--white);
+    padding: 1.5rem 0;
+    box-shadow: var(--shadow);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.header-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+}
+
+.logo-section {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.logo-icon {
+    font-size: 2rem;
+    line-height: 1;
+}
+
+.logo-text {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    letter-spacing: -0.5px;
+}
+
+/* ========================================
+   Main Container
+   ======================================== */
+.main-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - 80px);
+    padding: 3rem 2rem;
+}
+
+.content-card {
+    background-color: var(--white);
+    border-radius: 1.5rem;
+    padding: 4rem;
+    box-shadow: var(--shadow-lg);
+    max-width: 900px;
+    width: 100%;
+    animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ========================================
+   Title Section
+   ======================================== */
+.title-section {
+    text-align: center;
+    margin-bottom: 3.5rem;
+}
+
+.main-title {
+    font-size: 2.25rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-bottom: 0.75rem;
+    letter-spacing: -0.75px;
+}
+
+.subtitle {
+    font-size: 1.125rem;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+/* ========================================
+   Selection Cards
+   ======================================== */
+.selection-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2.5rem;
+    margin-top: 3rem;
+}
+
+.selection-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2.5rem 2rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 1.25rem;
+    background-color: var(--white);
+    text-align: center;
+    transition: var(--transition);
+    cursor: pointer;
+    position: relative;
+}
+
+.selection-card:hover {
+    border-color: var(--primary-green);
+    box-shadow: 0 20px 25px -5px rgba(16, 185, 129, 0.1);
+    transform: translateY(-5px);
+}
+
+
+.selection-card:hover::before {
+    opacity: 1;
+}
+
+/* ========================================
+   Card Icons
+   ======================================== */
+.card-icon-container {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+    transition: var(--transition);
+    color: var(--text-dark);
+}
+
+.ngo-icon {
+    background-color: var(--light-green);
+    color: var(--primary-green);
+}
+
+.user-icon {
+    background-color: var(--light-blue-green);
+    color: var(--primary-green);
+}
+
+.card-icon {
+    width: 40px;
+    height: 40px;
+}
+
+.selection-card:hover .card-icon-container {
+    transform: scale(1.1);
+}
+
+/* ========================================
+   Card Content
+   ======================================== */
+.card-heading {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-bottom: 0.75rem;
+    letter-spacing: -0.5px;
+}
+
+.card-description {
+    font-size: 1rem;
+    color: var(--text-muted);
+    margin-bottom: 2rem;
+    line-height: 1.6;
+    min-height: 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ========================================
+   Buttons
+   ======================================== */
+.card-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    width: 100%;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.75rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: var(--transition);
+    font-family: 'Inter', sans-serif;
+    letter-spacing: -0.3px;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-primary {
+    background-color: var(--primary-green);
+    color: var(--white);
+    border: 2px solid var(--primary-green);
+}
+
+.btn-primary:hover {
+    background-color: #059669;
+    border-color: #059669;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+.btn-outline {
+    background-color: transparent;
+    color: var(--primary-green);
+    border: 2px solid var(--primary-green);
+}
+
+.btn-outline:hover {
+    background-color: var(--light-green);
+    border-color: var(--primary-green);
+    transform: translateY(-2px);
+}
+
+.btn-outline:active {
+    transform: translateY(0);
+}
+
+/* ========================================
+   Responsive Design
+   ======================================== */
+@media (max-width: 768px) {
+    .main-container {
+        min-height: auto;
+        padding: 2rem 1rem;
+    }
+
+    .content-card {
+        padding: 2.5rem 1.5rem;
+        border-radius: 1.25rem;
+    }
+
+    .main-title {
+        font-size: 1.75rem;
+    }
+
+    .subtitle {
+        font-size: 1rem;
+    }
+
+    .selection-cards {
+        grid-template-columns: 1fr;
+        gap: 1.75rem;
+    }
+
+    .selection-card {
+        padding: 2rem 1.5rem;
+    }
+
+    .title-section {
+        margin-bottom: 2.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .header-container {
+        padding: 0 1rem;
+    }
+
+    .logo-text {
+        font-size: 1.25rem;
+    }
+
+    .content-card {
+        padding: 1.75rem 1rem;
+        border-radius: 1rem;
+    }
+
+    .main-title {
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .subtitle {
+        font-size: 0.9rem;
+    }
+
+    .card-heading {
+        font-size: 1.25rem;
+    }
+
+    .card-description {
+        font-size: 0.9rem;
+        min-height: auto;
+    }
+
+    .card-buttons {
+        gap: 0.5rem;
+    }
+
+    .btn {
+        padding: 0.65rem 1.25rem;
+        font-size: 0.9rem;
+    }
+
+    .card-icon-container {
+        width: 70px;
+        height: 70px;
+        margin-bottom: 1rem;
+    }
+
+    .card-icon {
+        width: 35px;
+        height: 35px;
+    }
+
+    .selection-card {
+        padding: 1.75rem 1rem;
+    }
+}
+
+/* ========================================
+   Focus States (Accessibility)
+   ======================================== */
+.btn:focus-visible {
+    outline: 2px solid var(--primary-green);
+    outline-offset: 2px;
+}
+
+.selection-card:focus-visible {
+    outline: 2px solid var(--primary-green);
+    outline-offset: 2px;
+}
+
+/* ========================================
+   Print Styles
+   ======================================== */
+@media print {
+    .header {
+        position: static;
+    }
+
+    .main-container {
+        min-height: auto;
+    }
+}

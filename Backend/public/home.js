@@ -1,12 +1,58 @@
 // Mobile Menu Toggle
 document.addEventListener('DOMContentLoaded', function() {
     const userFeedPosts = Array.isArray(window.__HOME_FEED_POSTS__) ? window.__HOME_FEED_POSTS__ : [];
+    const followedNgoStorageKey = 'helpconnect.followedNgos';
+
+    function createNgoProfilePath(name) {
+        const cleanedName = String(name || '').trim();
+
+        return cleanedName ? `/ngo/profile/${encodeURIComponent(cleanedName)}` : '#';
+    }
+
+    function normalizeNgoKey(value) {
+        return String(value || '')
+            .trim()
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '');
+    }
+
+    function loadFollowedNgoKeys() {
+        try {
+            const parsedKeys = JSON.parse(window.localStorage.getItem(followedNgoStorageKey) || '[]');
+            return Array.isArray(parsedKeys) ? parsedKeys : [];
+        } catch {
+            return [];
+        }
+    }
+
+    function saveFollowedNgoKeys(keys) {
+        window.localStorage.setItem(followedNgoStorageKey, JSON.stringify(keys));
+    }
+
+    function isNgoFollowed(name) {
+        return loadFollowedNgoKeys().includes(normalizeNgoKey(name));
+    }
+
+    function setNgoFollowed(name, shouldFollow) {
+        const normalizedName = normalizeNgoKey(name);
+        const nextKeys = new Set(loadFollowedNgoKeys());
+
+        if (shouldFollow) {
+            nextKeys.add(normalizedName);
+        } else {
+            nextKeys.delete(normalizedName);
+        }
+
+        saveFollowedNgoKeys(Array.from(nextKeys));
+        return nextKeys.has(normalizedName);
+    }
 
     // Demo post data array
     const demoPosts = [
         {
             id: 1,
             ngoName: "Heart Care NGO",
+            profileUrl: createNgoProfilePath("Heart Care NGO"),
             title: "Help Needed for Child Heart Surgery",
             description: "Young Arjun, age 8, needs urgent heart surgery to save his life. The procedure costs ₹25,000 and every contribution brings us closer to our goal.",
             raisedAmount: 18500,
@@ -17,6 +63,7 @@ document.addEventListener('DOMContentLoaded', function() {
         {
             id: 2,
             ngoName: "Education First",
+            profileUrl: createNgoProfilePath("Education First"),
             title: "Build a School Library for Rural Children",
             description: "We're creating a library in a remote village school to provide access to quality education resources. Help us inspire young minds through reading.",
             raisedAmount: 12750,
@@ -27,6 +74,7 @@ document.addEventListener('DOMContentLoaded', function() {
         {
             id: 3,
             ngoName: "Disaster Relief Fund",
+            profileUrl: createNgoProfilePath("Disaster Relief Fund"),
             title: "Emergency Relief for Flood Victims",
             description: "Recent floods have displaced thousands of families. We urgently need funds for temporary shelter, food, and medical supplies for affected communities.",
             raisedAmount: 45200,
@@ -37,6 +85,7 @@ document.addEventListener('DOMContentLoaded', function() {
         {
             id: 4,
             ngoName: "Wildlife Sanctuary",
+            profileUrl: createNgoProfilePath("Wildlife Sanctuary"),
             title: "Protect Endangered Species",
             description: "Our sanctuary is working to preserve the habitats of endangered animals. Support us in protecting these magnificent creatures for future generations.",
             raisedAmount: 8900,
@@ -47,6 +96,7 @@ document.addEventListener('DOMContentLoaded', function() {
         {
             id: 5,
             ngoName: "Healthcare Initiative",
+            profileUrl: createNgoProfilePath("Healthcare Initiative"),
             title: "Free Medical Camp in Slums",
             description: "We're organizing a comprehensive medical camp to provide free healthcare checkups and medicines to underprivileged communities.",
             raisedAmount: 22300,
@@ -123,6 +173,23 @@ document.addEventListener('DOMContentLoaded', function() {
             const hasGoal = post.goalAmount > 0;
             const progressPercentage = hasGoal ? Math.min((post.raisedAmount / post.goalAmount) * 100, 100) : 0;
             const initials = getAvatarInitials(post.ngoName);
+            const ngoName = escapeHtml(post.ngoName);
+            const profileUrl = post.profileUrl ? escapeHtml(post.profileUrl) : '';
+            const headerLeftMarkup = post.profileUrl
+                ? `
+                    <a class="post-author-link" href="${profileUrl}" aria-label="Open ${ngoName} profile">
+                        <div class="post-avatar ${post.avatarColor}">
+                            ${initials}
+                        </div>
+                        <span class="post-ngo-name">${ngoName}</span>
+                    </a>
+                `
+                : `
+                    <div class="post-avatar ${post.avatarColor}">
+                        ${initials}
+                    </div>
+                    <span class="post-ngo-name">${ngoName}</span>
+                `;
             const imageMarkup = post.imageUrl
                 ? `
                     <div class="post-media">
@@ -149,10 +216,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <!-- Post Header -->
                     <div class="post-header">
                         <div class="post-header-left">
-                            <div class="post-avatar ${post.avatarColor}">
-                                ${initials}
-                            </div>
-                            <span class="post-ngo-name">${post.ngoName}</span>
+                            ${headerLeftMarkup}
                         </div>
                         <button class="post-more-btn" aria-label="More options">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -275,12 +339,14 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!ngoList) return;
 
         ngoList.innerHTML = ngos.map(ngo => `
-            <li class="ngo-item">
+            <li class="ngo-item" data-ngo-name="${escapeHtml(ngo.name)}" data-followers-count="${Number(ngo.followers) || 0}">
                 <div class="ngo-info">
-                    <div class="ngo-name">${ngo.name}</div>
-                    <div class="ngo-followers">${formatFollowers(ngo.followers)} followers</div>
+                    <a class="ngo-link" href="${createNgoProfilePath(ngo.name)}" aria-label="Open ${escapeHtml(ngo.name)} profile">
+                        <span class="ngo-name">${escapeHtml(ngo.name)}</span>
+                        <span class="ngo-followers">${formatFollowers(ngo.followers)} followers</span>
+                    </a>
                 </div>
-                <button class="btn-follow" data-ngo-id="${ngo.id}">Follow</button>
+                <button class="btn-follow" type="button" data-ngo-id="${ngo.id}" data-ngo-name="${escapeHtml(ngo.name)}">Follow</button>
             </li>
         `).join('');
 
@@ -288,11 +354,45 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.btn-follow').forEach(btn => {
             btn.addEventListener('click', function(e) {
                 e.preventDefault();
-                const ngoId = this.getAttribute('data-ngo-id');
-                this.classList.toggle('following');
-                this.textContent = this.classList.contains('following') ? 'Following' : 'Follow';
-                console.log('Follow toggled for NGO:', ngoId);
+                const ngoName = this.getAttribute('data-ngo-name');
+                const ngoItem = this.closest('.ngo-item');
+                const isFollowing = this.classList.contains('following');
+                const nextFollowing = setNgoFollowed(ngoName, !isFollowing);
+
+                this.classList.toggle('following', nextFollowing);
+                this.textContent = nextFollowing ? 'Following' : 'Follow';
+                this.setAttribute('aria-pressed', nextFollowing ? 'true' : 'false');
+
+                if (ngoItem) {
+                    const followersLabel = ngoItem.querySelector('.ngo-followers');
+                    const baseFollowers = Number(ngoItem.dataset.followersCount || 0);
+                    const displayedFollowers = baseFollowers + (nextFollowing ? 1 : 0);
+
+                    if (followersLabel) {
+                        followersLabel.textContent = `${formatFollowers(displayedFollowers)} followers`;
+                    }
+                }
+
+                console.log('Follow toggled for NGO:', ngoName);
             });
+
+            const ngoName = btn.getAttribute('data-ngo-name');
+            const ngoItem = btn.closest('.ngo-item');
+            const isFollowing = isNgoFollowed(ngoName);
+
+            btn.classList.toggle('following', isFollowing);
+            btn.textContent = isFollowing ? 'Following' : 'Follow';
+            btn.setAttribute('aria-pressed', isFollowing ? 'true' : 'false');
+
+            if (ngoItem) {
+                const followersLabel = ngoItem.querySelector('.ngo-followers');
+                const baseFollowers = Number(ngoItem.dataset.followersCount || 0);
+                const displayedFollowers = baseFollowers + (isFollowing ? 1 : 0);
+
+                if (followersLabel) {
+                    followersLabel.textContent = `${formatFollowers(displayedFollowers)} followers`;
+                }
+            }
         });
     }
 
