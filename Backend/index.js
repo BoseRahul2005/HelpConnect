@@ -50,6 +50,14 @@ const profilePictureUploadDir = path.join(__dirname, 'public', 'uploads', 'profi
 
 fs.mkdirSync(profilePictureUploadDir, { recursive: true });
 
+const hasDatabaseConfig = Boolean(
+    process.env.MYSQL_HOST &&
+    process.env.MYSQL_USER &&
+    process.env.MYSQL_PASSWORD &&
+    process.env.MYSQL_DATABASE
+);
+const shouldUseDatabase = !process.env.VERCEL || hasDatabaseConfig;
+
 const profilePictureUpload = multer({
     storage: multer.diskStorage({
         destination: (req, file, callback) => {
@@ -162,6 +170,71 @@ async function getLoggedInUser(req) {
     }
 
     return helpConnectDb.getSingleUserById(userId);
+}
+
+async function safeGetLoggedInNgo(req) {
+    if (!shouldUseDatabase) {
+        return null;
+    }
+
+    try {
+        return await getLoggedInNgo(req);
+    } catch (error) {
+        console.error('Unable to load NGO session:', error);
+        return null;
+    }
+}
+
+async function safeGetLoggedInUser(req) {
+    if (!shouldUseDatabase) {
+        return null;
+    }
+
+    try {
+        return await getLoggedInUser(req);
+    } catch (error) {
+        console.error('Unable to load user session:', error);
+        return null;
+    }
+}
+
+async function safeListRecentSingleUserFeedPosts(limit = 12) {
+    if (!shouldUseDatabase) {
+        return [];
+    }
+
+    try {
+        return await helpConnectDb.listRecentSingleUserFeedPosts(limit);
+    } catch (error) {
+        console.error('Unable to load home feed posts:', error);
+        return [];
+    }
+}
+
+async function safeListNgoAccounts() {
+    if (!shouldUseDatabase) {
+        return [];
+    }
+
+    try {
+        return await helpConnectDb.listNgoAccounts();
+    } catch (error) {
+        console.error('Unable to load NGO accounts:', error);
+        return [];
+    }
+}
+
+async function safeListSingleUserPosts(userId) {
+    if (!shouldUseDatabase) {
+        return [];
+    }
+
+    try {
+        return await helpConnectDb.listSingleUserPosts(userId);
+    } catch (error) {
+        console.error('Unable to load user posts:', error);
+        return [];
+    }
 }
 
 function getNgoInitials(name) {
@@ -803,12 +876,11 @@ function sanitizeNgoRecord(ngo) {
 }
 
 async function renderHomePage(req, res) {
-    const [loggedInNgo, loggedInUser] = await Promise.all([
-        getLoggedInNgo(req),
-        getLoggedInUser(req),
+    const [loggedInNgo, loggedInUser, homeFeedPosts] = await Promise.all([
+        safeGetLoggedInNgo(req),
+        safeGetLoggedInUser(req),
+        safeListRecentSingleUserFeedPosts(12),
     ]);
-
-    const homeFeedPosts = await helpConnectDb.listRecentSingleUserFeedPosts(12);
 
     return res.render('home', {
         loggedInNgo: loggedInNgo ? sanitizeNgoRecord(loggedInNgo) : null,
@@ -824,7 +896,7 @@ async function renderHomePage(req, res) {
 }
 
 async function renderNgoProfilePage(req, res) {
-    const ngo = await getLoggedInNgo(req);
+    const ngo = await safeGetLoggedInNgo(req);
 
     if (!ngo) {
         return res.redirect('/ngo/login');
@@ -835,20 +907,20 @@ async function renderNgoProfilePage(req, res) {
 
 async function renderPublicNgoProfilePage(req, res) {
     const requestedName = String(req.params.ngoName || '').trim();
-    const ngoAccounts = await helpConnectDb.listNgoAccounts();
+    const ngoAccounts = await safeListNgoAccounts();
     const matchedNgo = ngoAccounts.find((account) => normalizeNgoLookupKey(account.orgName) === normalizeNgoLookupKey(requestedName)) || null;
 
     return res.render('ngo-profile', buildPublicNgoProfileViewModel(matchedNgo ? sanitizeNgoRecord(matchedNgo) : null, requestedName));
 }
 
 async function renderUserProfilePage(req, res) {
-    const user = await getLoggedInUser(req);
+    const user = await safeGetLoggedInUser(req);
 
     if (!user) {
         return res.redirect('/user/login');
     }
 
-    const posts = await helpConnectDb.listSingleUserPosts(user.id);
+    const posts = await safeListSingleUserPosts(user.id);
 
     return res.render('profile-page', buildUserProfileViewModel(user, posts));
 }
@@ -1055,7 +1127,7 @@ app.post('/ngo/signup', async (req, res) => {
 });
 
 app.get('/ngo/data', async (req, res) => {
-    const records = await helpConnectDb.listNgoAccounts();
+    const records = await safeListNgoAccounts();
 
     res.json({
         count: records.length,
