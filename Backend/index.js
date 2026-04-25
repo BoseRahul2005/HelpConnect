@@ -1,7 +1,7 @@
 const express =require ('express');
 const fs = require('fs');
 const app = express();
-const port = 8080;
+const port = Number(process.env.PORT || 8080);
 const path = require('path');
 const crypto = require('crypto');
 const multer = require('multer');
@@ -56,7 +56,7 @@ const hasDatabaseConfig = Boolean(
     process.env.MYSQL_PASSWORD &&
     process.env.MYSQL_DATABASE
 );
-const shouldUseDatabase = !process.env.VERCEL || hasDatabaseConfig;
+const shouldUseDatabase = hasDatabaseConfig;
 
 const profilePictureUpload = multer({
     storage: multer.diskStorage({
@@ -1374,7 +1374,9 @@ app.delete('/profile/posts/:postId', async (req, res) => {
 
 async function startServer() {
     try {
-        await helpConnectDb.ensureDatabase();
+        if (shouldUseDatabase) {
+            await helpConnectDb.ensureDatabase();
+        }
 
         app.listen(port, () => {
             console.log(`Server is running on port ${port}`);
