@@ -7,7 +7,11 @@ const crypto = require('crypto');
 const multer = require('multer');
 const helpConnectDb = require('./database/mysql');
 
-const profilePostUploadDir = path.join(__dirname, 'public', 'uploads', 'profile-posts');
+const frontendRootDir = path.join(__dirname, '..', 'Frontend');
+const frontendPublicDir = path.join(frontendRootDir, 'public');
+const frontendViewsDir = path.join(frontendRootDir, 'views');
+
+const profilePostUploadDir = path.join(frontendPublicDir, 'uploads', 'profile-posts');
 
 fs.mkdirSync(profilePostUploadDir, { recursive: true });
 
@@ -46,7 +50,7 @@ const profilePostUpload = multer({
     },
 });
 
-const profilePictureUploadDir = path.join(__dirname, 'public', 'uploads', 'profile-pictures');
+const profilePictureUploadDir = path.join(frontendPublicDir, 'uploads', 'profile-pictures');
 
 fs.mkdirSync(profilePictureUploadDir, { recursive: true });
 
@@ -87,8 +91,8 @@ const profilePictureUpload = multer({
 
 app.use(express.urlencoded({ extended: true }));
 app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
-app.use(express.static(path.join(__dirname, 'public')));
+app.set('views', frontendViewsDir);
+app.use(express.static(frontendPublicDir));
 
 function parseCookies(cookieHeader) {
     return cookieHeader
@@ -960,7 +964,7 @@ async function removeUploadedProfilePostImage(filePath) {
         return;
     }
 
-    const resolvedPath = path.join(__dirname, 'public', filePath.replace(/^\//, ''));
+    const resolvedPath = path.join(frontendPublicDir, filePath.replace(/^\//, ''));
 
     try {
         await fs.promises.unlink(resolvedPath);
@@ -974,7 +978,7 @@ async function removeUploadedProfilePicture(filePath) {
         return;
     }
 
-    const resolvedPath = path.join(__dirname, 'public', filePath.replace(/^\//, ''));
+    const resolvedPath = path.join(frontendPublicDir, filePath.replace(/^\//, ''));
 
     try {
         await fs.promises.unlink(resolvedPath);
