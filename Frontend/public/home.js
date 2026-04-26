@@ -1,7 +1,11 @@
 // Mobile Menu Toggle
 document.addEventListener('DOMContentLoaded', function() {
     const userFeedPosts = Array.isArray(window.__HOME_FEED_POSTS__) ? window.__HOME_FEED_POSTS__ : [];
+    const popularNgoFeedProfiles = Array.isArray(window.__HOME_POPULAR_NGO_PROFILES__) ? window.__HOME_POPULAR_NGO_PROFILES__ : [];
     const followedNgoStorageKey = 'madadsetu.followedNgos';
+    const postsFeed = document.getElementById('postsFeed');
+    const feedTitleNode = document.querySelector('[data-feed-title]');
+    const feedBreadcrumbNode = document.querySelector('[data-feed-breadcrumb]');
 
     function createNgoProfilePath(name) {
         const cleanedName = String(name || '').trim();
@@ -45,6 +49,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
         saveFollowedNgoKeys(Array.from(nextKeys));
         return nextKeys.has(normalizedName);
+    }
+
+    function formatCompactNumber(count) {
+        const numericCount = Number(count || 0);
+
+        if (numericCount >= 1000000) {
+            return `${(numericCount / 1000000).toFixed(numericCount >= 10000000 ? 0 : 1)}M`;
+        }
+
+        if (numericCount >= 1000) {
+            return `${(numericCount / 1000).toFixed(numericCount >= 10000 ? 0 : 1)}K`;
+        }
+
+        return numericCount.toLocaleString('en-US');
     }
 
     // Demo post data array
@@ -164,9 +182,105 @@ document.addEventListener('DOMContentLoaded', function() {
         return '$' + Number(amount || 0).toLocaleString();
     }
 
+    function normalizePopularNgoProfile(profile, index) {
+        const orgName = String(profile.orgName || profile.name || profile.ngoName || '').trim();
+
+        if (!orgName) {
+            return null;
+        }
+
+        const totalUpvotes = Number(profile.totalUpvotes ?? profile.upvotes ?? 0) || 0;
+        const followerCount = Number(profile.followerCount ?? profile.followers ?? profile.supporters ?? 0) || 0;
+        const postCount = Number(profile.postCount ?? profile.postsCount ?? profile.activePostCount ?? 0) || 0;
+        const highlightTitle = String(profile.highlightTitle || profile.title || 'Community update').trim() || 'Community update';
+        const fallbackSummary = 'Leading community action with every update.';
+        const highlightSummary = String(profile.highlightSummary || profile.summary || profile.description || fallbackSummary).trim() || fallbackSummary;
+
+        return {
+            id: profile.id || `popular-ngo-${index}`,
+            orgName,
+            profileUrl: profile.profileUrl || createNgoProfilePath(orgName),
+            orgTypeLabel: String(profile.orgTypeLabel || profile.orgType || 'Organization').trim() || 'Organization',
+            avatarColor: profile.avatarColor || getAvatarColor(orgName),
+            avatarInitials: profile.avatarInitials || getAvatarInitials(orgName),
+            totalUpvotes,
+            followerCount,
+            postCount,
+            highlightTitle,
+            highlightSummary,
+            websiteLabel: String(profile.websiteLabel || '').trim(),
+            rankLabel: String(profile.rankLabel || '').trim(),
+        };
+    }
+
+    function buildFallbackPopularNgoProfiles() {
+        return demoPosts
+            .map((post) => {
+                const matchingNgo = ngos.find((ngo) => normalizeNgoKey(ngo.name) === normalizeNgoKey(post.ngoName));
+
+                return {
+                    id: `demo-${post.id}`,
+                    orgName: post.ngoName,
+                    profileUrl: post.profileUrl || createNgoProfilePath(post.ngoName),
+                    orgTypeLabel: matchingNgo ? 'Featured NGO' : 'Organization',
+                    avatarColor: post.avatarColor || getAvatarColor(post.ngoName),
+                    avatarInitials: getAvatarInitials(post.ngoName),
+                    totalUpvotes: Number(post.upvotes) || 0,
+                    followerCount: matchingNgo ? Number(matchingNgo.followers) || 0 : 0,
+                    postCount: 1,
+                    highlightTitle: post.title,
+                    highlightSummary: post.description,
+                    websiteLabel: '',
+                };
+            })
+            .sort((left, right) => Number(right.totalUpvotes || 0) - Number(left.totalUpvotes || 0));
+    }
+
+    function getPopularNgoProfiles() {
+        const sourceProfiles = popularNgoFeedProfiles.length ? popularNgoFeedProfiles : buildFallbackPopularNgoProfiles();
+
+        return sourceProfiles
+            .map(normalizePopularNgoProfile)
+            .filter(Boolean)
+            .sort((left, right) => {
+                const upvoteDiff = Number(right.totalUpvotes || 0) - Number(left.totalUpvotes || 0);
+
+                if (upvoteDiff !== 0) {
+                    return upvoteDiff;
+                }
+
+                const followerDiff = Number(right.followerCount || 0) - Number(left.followerCount || 0);
+
+                if (followerDiff !== 0) {
+                    return followerDiff;
+                }
+
+                return String(left.orgName).localeCompare(String(right.orgName));
+            })
+            .map((profile, index) => ({
+                ...profile,
+                rank: index + 1,
+                rankLabel: `#${index + 1}`,
+            }));
+    }
+
+    function updateFeedHeader(mode) {
+        if (feedTitleNode) {
+            feedTitleNode.textContent = mode === 'popular-ngos' ? 'Popular NGOs' : 'Feed';
+        }
+
+        if (feedBreadcrumbNode) {
+            feedBreadcrumbNode.textContent = mode === 'popular-ngos'
+                ? '• Ranked by total post upvotes'
+                : '• Trending causes near you';
+        }
+    }
+
     // Function to render posts
     function renderPosts() {
-        const postsFeed = document.getElementById('postsFeed');
+        if (!postsFeed) return;
+
+        updateFeedHeader('posts');
         const posts = getFeedPosts();
         
         postsFeed.innerHTML = posts.map(post => {
@@ -253,6 +367,77 @@ document.addEventListener('DOMContentLoaded', function() {
         attachPostEventListeners();
     }
 
+    function renderPopularNgoProfiles() {
+        if (!postsFeed) return;
+
+        const profiles = getPopularNgoProfiles();
+        updateFeedHeader('popular-ngos');
+
+        if (!profiles.length) {
+            postsFeed.innerHTML = `
+                <article class="post-card ngo-profile-card">
+                    <div class="post-body">
+                        <h3 class="post-title">No NGO profiles available yet</h3>
+                        <p class="post-description">Popular NGOs will appear here once their posts collect upvotes.</p>
+                    </div>
+                </article>
+            `;
+            return;
+        }
+
+        postsFeed.innerHTML = profiles.map((profile) => {
+            const ngoName = escapeHtml(profile.orgName);
+            const profileUrl = escapeHtml(profile.profileUrl);
+            const initials = escapeHtml(profile.avatarInitials);
+            const following = isNgoFollowed(profile.orgName);
+            const scoreLabel = `${formatCompactNumber(profile.totalUpvotes)} upvotes`;
+            const followerLabel = `${formatCompactNumber(profile.followerCount)} supporters`;
+            const postCountLabel = `${formatCompactNumber(profile.postCount)} posts`;
+            const websiteLabel = profile.websiteLabel ? `<span class="ngo-profile-stat">${escapeHtml(profile.websiteLabel)}</span>` : '';
+            const rankLabel = escapeHtml(profile.rankLabel || '');
+
+            return `
+                <article class="post-card ngo-profile-card" data-ngo-profile-card="${ngoName}" data-ngo-profile-card-url="${profileUrl}" tabindex="0" role="link" aria-label="Open ${ngoName} profile">
+                    <div class="post-header ngo-profile-header">
+                        <div class="post-header-left">
+                            <a class="post-author-link ngo-profile-link" href="${profileUrl}" aria-label="Open ${ngoName} profile">
+                                <div class="post-avatar ${profile.avatarColor}">${initials}</div>
+                                <span class="ngo-profile-link-copy">
+                                    <span class="post-ngo-name">${ngoName}</span>
+                                    <span class="ngo-profile-subtitle">${escapeHtml(profile.orgTypeLabel)}</span>
+                                </span>
+                            </a>
+                        </div>
+                        <div class="ngo-profile-score" aria-label="${scoreLabel}">
+                            <span class="ngo-profile-score-value">${formatCompactNumber(profile.totalUpvotes)}</span>
+                            <span class="ngo-profile-score-label">upvotes</span>
+                        </div>
+                    </div>
+
+                    <div class="post-body ngo-profile-body">
+                        <div class="ngo-profile-rank-chip">Rank ${rankLabel}</div>
+                        <h3 class="post-title">${escapeHtml(profile.highlightTitle)}</h3>
+                        <p class="post-description">${escapeHtml(profile.highlightSummary)}</p>
+                        <div class="ngo-profile-stats">
+                            <span class="ngo-profile-stat">${postCountLabel}</span>
+                            <span class="ngo-profile-stat">${followerLabel}</span>
+                            ${websiteLabel}
+                        </div>
+                    </div>
+
+                    <div class="post-actions ngo-profile-actions">
+                        <div class="post-actions-left">
+                            <button class="btn-donate ngo-profile-view-btn" type="button" data-ngo-profile-view="${profileUrl}">View Profile</button>
+                            <button class="btn-follow ngo-profile-follow-btn${following ? ' following' : ''}" type="button" data-ngo-profile-follow="${ngoName}" aria-pressed="${following ? 'true' : 'false'}">${following ? 'Following' : 'Follow'}</button>
+                        </div>
+                    </div>
+                </article>
+            `;
+        }).join('');
+
+        attachPopularNgoProfileListeners();
+    }
+
     // Function to attach event listeners to posts
     function attachPostEventListeners() {
         // Donate button handlers
@@ -309,6 +494,70 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 console.log('Upvote toggled for post:', postId);
             });
+        });
+    }
+
+    function attachPopularNgoProfileListeners() {
+        document.querySelectorAll('[data-ngo-profile-card-url]').forEach(card => {
+            card.addEventListener('click', function(event) {
+                const interactiveTarget = event.target.closest('a, button');
+
+                if (interactiveTarget) {
+                    return;
+                }
+
+                const profileUrl = this.getAttribute('data-ngo-profile-card-url');
+
+                if (profileUrl) {
+                    window.location.href = profileUrl;
+                }
+            });
+
+            card.addEventListener('keydown', function(event) {
+                if (event.key !== 'Enter' && event.key !== ' ') {
+                    return;
+                }
+
+                event.preventDefault();
+
+                const profileUrl = this.getAttribute('data-ngo-profile-card-url');
+
+                if (profileUrl) {
+                    window.location.href = profileUrl;
+                }
+            });
+        });
+
+        document.querySelectorAll('[data-ngo-profile-view]').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+
+                const profileUrl = this.getAttribute('data-ngo-profile-view');
+                if (profileUrl) {
+                    window.location.href = profileUrl;
+                }
+            });
+        });
+
+        document.querySelectorAll('[data-ngo-profile-follow]').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+
+                const ngoName = this.getAttribute('data-ngo-profile-follow');
+                const isFollowing = this.classList.contains('following');
+                const nextFollowing = setNgoFollowed(ngoName, !isFollowing);
+
+                this.classList.toggle('following', nextFollowing);
+                this.textContent = nextFollowing ? 'Following' : 'Follow';
+                this.setAttribute('aria-pressed', nextFollowing ? 'true' : 'false');
+            });
+
+            const ngoName = btn.getAttribute('data-ngo-profile-follow');
+            const isFollowing = isNgoFollowed(ngoName);
+
+            btn.classList.toggle('following', isFollowing);
+            btn.textContent = isFollowing ? 'Following' : 'Follow';
+            btn.setAttribute('aria-pressed', isFollowing ? 'true' : 'false');
         });
     }
 
@@ -433,8 +682,17 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    function setFeedMode(feedMode) {
+        if (feedMode === 'popular-ngos') {
+            renderPopularNgoProfiles();
+            return;
+        }
+
+        renderPosts();
+    }
+
     // Render posts on page load
-    renderPosts();
+    setFeedMode('posts');
     renderNGOList();
     renderUrgentCases();
     attachCTAListener();
@@ -458,12 +716,18 @@ document.addEventListener('DOMContentLoaded', function() {
     sidebarLinks.forEach(link => {
         link.addEventListener('click', function(event) {
             event.preventDefault();
+
+            const feedMode = this.getAttribute('data-feed-mode');
             
             // Remove active class from all links
             sidebarLinks.forEach(l => l.classList.remove('active'));
             
             // Add active class to clicked link
             this.classList.add('active');
+
+            if (feedMode === 'popular-ngos' || feedMode === 'posts') {
+                setFeedMode(feedMode);
+            }
             
             console.log('Sidebar link clicked:', this.textContent.trim());
             // Add your navigation logic here

@@ -61,6 +61,7 @@ const hasDatabaseConfig = Boolean(
     process.env.MYSQL_DATABASE
 );
 const shouldUseDatabase = hasDatabaseConfig;
+const rememberMeAuthCookieMaxAge = 365 * 24 * 60 * 60 * 1000;
 
 const profilePictureUpload = multer({
     storage: multer.diskStorage({
@@ -290,7 +291,14 @@ function hashText(value) {
 }
 
 function pickSeededValue(seed, values) {
-    return values[seed % values.length];
+    if (!Array.isArray(values) || values.length === 0) {
+        return null;
+    }
+
+    const numericSeed = Number(seed);
+    const normalizedSeed = Number.isFinite(numericSeed) ? (Math.trunc(numericSeed) >>> 0) : 0;
+
+    return values[normalizedSeed % values.length];
 }
 
 function createSvgDataUri(svgMarkup) {
@@ -344,10 +352,10 @@ function buildNgoArtwork(displayName) {
         ['#0f766e', '#22c55e'],
     ];
     const [coverStart, coverMid, coverEnd] = pickSeededValue(seed, coverPalettes);
-    const [avatarStart, avatarEnd] = pickSeededValue(seed >> 2, avatarPalettes);
+    const [avatarStart, avatarEnd] = pickSeededValue(seed >>> 2, avatarPalettes);
     const initials = getNgoInitials(displayName);
     const coverWaveOffset = 30 + (seed % 70);
-    const coverBlobOffset = 50 + ((seed >> 3) % 110);
+    const coverBlobOffset = 50 + ((seed >>> 3) % 110);
     const coverSvg = `
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 420" fill="none">
             <defs>
@@ -393,6 +401,34 @@ function buildNgoArtwork(displayName) {
     };
 }
 
+function getNgoPostUpvoteCount(post) {
+    const source = typeof post === 'object' && post !== null ? post : {};
+    const rawUpvotes = source.upvotes
+        ?? source.upvoteCount
+        ?? source.votes
+        ?? source.voteCount
+        ?? source.likeCount
+        ?? source.likes
+        ?? source.totalUpvotes
+        ?? source.totalVotes;
+
+    if (Array.isArray(rawUpvotes)) {
+        return rawUpvotes.length;
+    }
+
+    const parsedUpvotes = Number(rawUpvotes);
+    if (Number.isFinite(parsedUpvotes) && parsedUpvotes >= 0) {
+        return parsedUpvotes;
+    }
+
+    const upvoters = source.upvoters ?? source.upvotedBy ?? source.likedBy;
+    if (Array.isArray(upvoters)) {
+        return upvoters.length;
+    }
+
+    return 0;
+}
+
 function normalizeNgoPublicPost(post, index) {
     const source = typeof post === 'object' && post !== null ? post : { body: String(post || '') };
     const title = String(source.title || source.heading || '').trim() || 'Community update';
@@ -418,6 +454,7 @@ function normalizeNgoPublicPost(post, index) {
         fundRaiseGoalLabel: parsedGoal !== null ? formatDollarAmount(parsedGoal) : null,
         raisedAmount: Number.isFinite(parsedRaisedAmount) ? parsedRaisedAmount : 0,
         raisedAmountLabel: formatDollarAmount(Number.isFinite(parsedRaisedAmount) ? parsedRaisedAmount : 0),
+        upvoteCount: getNgoPostUpvoteCount(source),
         submittedAt,
         submittedAtLabel: formatDateTime(submittedAt),
         progressPercent: parsedGoal ? Math.min(((Number.isFinite(parsedRaisedAmount) ? parsedRaisedAmount : 0) / parsedGoal) * 100, 100) : 0,
@@ -504,7 +541,7 @@ function buildFallbackNgoProfileData(displayName, orgType) {
     return {
         orgType: inferredType,
         website: `${baseWebsiteSlug || 'madadsetu'}.org`,
-        location: pickSeededValue(seed >> 1, cityOptions),
+        location: pickSeededValue(seed >>> 1, cityOptions),
         foundedLabel: `Founded ${2010 + (seed % 13)}`,
         profileStatusLabel: 'Demo profile preview',
         followerCount: 12000 + (seed % 6000),
@@ -517,6 +554,48 @@ function buildFallbackNgoProfileData(displayName, orgType) {
     };
 }
 
+function buildPopularNgoFeedProfiles(ngoAccounts) {
+    return getNgoCollection(ngoAccounts)
+        .map((ngo) => {
+            const displayName = String((ngo && ngo.orgName) || '').trim();
+
+            if (!displayName) {
+                return null;
+            }
+
+            const posts = getNgoCollection(ngo.posts).map((post, index) => normalizeNgoPublicPost(post, index + 1));
+            const totalPostUpvotes = posts.reduce((sum, post) => sum + Number(post.upvoteCount || 0), 0);
+            const followerCount = getNgoCollection(ngo.followers).length;
+            const totalUpvotes = totalPostUpvotes > 0 ? totalPostUpvotes : getNgoCollection(ngo.upvoted).length;
+            const topPost = posts
+                .slice()
+                .sort((left, right) => (Number(right.upvoteCount || 0) - Number(left.upvoteCount || 0)) || (new Date(right.submittedAt).getTime() - new Date(left.submittedAt).getTime()))[0] || null;
+
+            return {
+                id: ngo.id,
+                orgName: displayName,
+                profileUrl: `/ngo/profile/${encodeURIComponent(displayName)}`,
+                orgType: ngo.orgType || 'other',
+                orgTypeLabel: getNgoTypeLabel(ngo.orgType),
+                avatarInitials: getNgoInitials(displayName),
+                avatarColor: pickSeededValue(hashText(displayName), ['avatar-green', 'avatar-blue', 'avatar-orange', 'avatar-purple', 'avatar-red']),
+                totalUpvotes,
+                followerCount,
+                postCount: posts.length,
+                highlightTitle: topPost ? topPost.title : getNgoTagline(ngo.orgType, displayName),
+                highlightSummary: topPost ? topPost.body : getNgoTagline(ngo.orgType, displayName),
+                websiteLabel: ngo.website ? normalizeWebsiteUrl(ngo.website) : null,
+            };
+        })
+        .filter(Boolean)
+        .sort((left, right) => (Number(right.totalUpvotes || 0) - Number(left.totalUpvotes || 0)) || (Number(right.followerCount || 0) - Number(left.followerCount || 0)) || String(left.orgName).localeCompare(String(right.orgName)))
+        .map((profile, index) => ({
+            ...profile,
+            rank: index + 1,
+            rankLabel: `#${index + 1}`,
+        }));
+}
+
 function buildPublicNgoProfileViewModel(ngo, requestedName) {
     const displayName = String((ngo && ngo.orgName) || requestedName || 'NGO Profile').trim() || 'NGO Profile';
     const seed = hashText(displayName);
@@ -525,7 +604,7 @@ function buildPublicNgoProfileViewModel(ngo, requestedName) {
     const orgType = (ngo && ngo.orgType) || null;
     const fallbackData = buildFallbackNgoProfileData(displayName, orgType);
     const website = normalizeWebsiteUrl((ngo && ngo.website) || null);
-    const profileLocation = pickSeededValue(seed >> 1, [
+    const profileLocation = pickSeededValue(seed >>> 1, [
         'Mumbai, India',
         'Delhi, India',
         'Bengaluru, India',
@@ -886,11 +965,14 @@ function sanitizeNgoRecord(ngo) {
 }
 
 async function renderHomePage(req, res) {
-    const [loggedInNgo, loggedInUser, homeFeedPosts] = await Promise.all([
+    const [loggedInNgo, loggedInUser, homeFeedPosts, ngoAccounts] = await Promise.all([
         safeGetLoggedInNgo(req),
         safeGetLoggedInUser(req),
         safeListRecentSingleUserFeedPosts(12),
+        safeListNgoAccounts(),
     ]);
+
+    const popularNgoProfiles = buildPopularNgoFeedProfiles(ngoAccounts);
 
     return res.render('home', {
         loggedInNgo: loggedInNgo ? sanitizeNgoRecord(loggedInNgo) : null,
@@ -902,6 +984,7 @@ async function renderHomePage(req, res) {
         ngoInitials: loggedInNgo ? getNgoInitials(loggedInNgo.orgName) : null,
         userInitials: loggedInUser ? getUserInitials(loggedInUser.name) : null,
         homeFeedPostsJson: serializeForInlineScript(homeFeedPosts),
+        homePopularNgoProfilesJson: serializeForInlineScript(popularNgoProfiles),
     });
 }
 
@@ -1004,6 +1087,20 @@ function clearNgoAuthCookie(res) {
 function clearAllAuthCookies(res) {
     clearUserAuthCookie(res);
     clearNgoAuthCookie(res);
+}
+
+function buildAuthCookieOptions(rememberMe) {
+    const cookieOptions = {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+    };
+
+    if (rememberMe === 'on') {
+        cookieOptions.maxAge = rememberMeAuthCookieMaxAge;
+    }
+
+    return cookieOptions;
 }
 
 // Routes
@@ -1163,7 +1260,7 @@ app.get('/ngo/login', (req, res) => {
 });
 
 app.post('/ngo/login', async (req, res) => {
-    const { emailOrMobile, password } = req.body;
+    const { emailOrMobile, password, rememberMe } = req.body;
     const authenticatedNgo = await madadsetuDb.authenticateNgo(emailOrMobile, password);
 
     if (!authenticatedNgo) {
@@ -1172,12 +1269,7 @@ app.post('/ngo/login', async (req, res) => {
         });
     }
 
-    res.cookie('ngoAuthId', authenticatedNgo.id, {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    res.cookie('ngoAuthId', authenticatedNgo.id, buildAuthCookieOptions(rememberMe));
 
     return res.redirect('/');
 });
@@ -1344,12 +1436,7 @@ app.post('/user/signup', async (req, res) => {
             birthday,
         });
 
-        res.cookie('userAuthId', createdUser.id, {
-            httpOnly: true,
-            sameSite: 'lax',
-            path: '/',
-            maxAge: 7 * 24 * 60 * 60 * 1000,
-        });
+        res.cookie('userAuthId', createdUser.id, buildAuthCookieOptions(''));
 
         return res.redirect('/home');
     } catch (error) {
@@ -1387,17 +1474,7 @@ app.post('/user/login', async (req, res) => {
         });
     }
 
-    const cookieOptions = {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-    };
-
-    if (rememberMe === 'on') {
-        cookieOptions.maxAge = 7 * 24 * 60 * 60 * 1000;
-    }
-
-    res.cookie('userAuthId', authenticatedUser.id, cookieOptions);
+    res.cookie('userAuthId', authenticatedUser.id, buildAuthCookieOptions(rememberMe));
 
     return res.redirect('/home');
 });

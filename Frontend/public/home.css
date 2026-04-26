@@ -511,6 +511,25 @@ body {
         width: 100%;
         justify-content: center;
     }
+
+    .ngo-profile-actions .post-actions-left {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+
+    .ngo-profile-actions .btn-donate,
+    .ngo-profile-actions .btn-follow {
+        flex: 1;
+        justify-content: center;
+    }
+
+    .ngo-profile-score {
+        align-items: flex-start;
+    }
+
+    .ngo-profile-rank {
+        margin-left: auto;
+    }
 }
 
 @media (max-width: 480px) {
@@ -587,6 +606,26 @@ body {
     .post-upvote {
         width: 100%;
         padding: 9px 12px;
+    }
+
+    .ngo-profile-score {
+        width: 100%;
+        align-items: flex-start;
+    }
+
+    .ngo-profile-actions .post-actions-left {
+        width: 100%;
+    }
+
+    .ngo-profile-actions .btn-donate,
+    .ngo-profile-actions .btn-follow {
+        flex: 1;
+        justify-content: center;
+    }
+
+    .ngo-profile-rank {
+        width: 100%;
+        margin-left: 0;
     }
 }
 
@@ -767,6 +806,15 @@ body {
 .post-card:hover {
     border-color: #E5E7EB;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.ngo-profile-card {
+    cursor: pointer;
+}
+
+.ngo-profile-card:focus-visible {
+    outline: 2px solid rgba(46, 125, 50, 0.28);
+    outline-offset: 2px;
 }
 
 /* Post Header */
@@ -1017,6 +1065,110 @@ body {
 .post-upvote.upvoted {
     background-color: rgba(46, 125, 50, 0.1);
     color: var(--primary-green);
+}
+
+.ngo-profile-card .post-header {
+    align-items: flex-start;
+}
+
+.ngo-profile-link {
+    align-items: center;
+}
+
+.ngo-profile-link-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.ngo-profile-subtitle {
+    font-size: 12px;
+    color: #6B7280;
+    font-weight: 500;
+}
+
+.ngo-profile-score {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: rgba(46, 125, 50, 0.08);
+    color: var(--primary-green);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.ngo-profile-score-value {
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.ngo-profile-score-label {
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #4B5563;
+    font-weight: 700;
+}
+
+.ngo-profile-rank-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 28px;
+    padding: 0 12px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, rgba(46, 125, 50, 0.14), rgba(46, 125, 50, 0.04));
+    color: var(--primary-green);
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 12px;
+}
+
+.ngo-profile-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 18px;
+}
+
+.ngo-profile-stat {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background-color: #F9FAFB;
+    border: 1px solid #E5E7EB;
+    color: #4B5563;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.ngo-profile-actions {
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.ngo-profile-rank {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    height: 34px;
+    padding: 0 12px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, rgba(46, 125, 50, 0.14), rgba(46, 125, 50, 0.04));
+    color: var(--primary-green);
+    font-weight: 700;
+    font-size: 13px;
+    flex-shrink: 0;
 }
 
 .upvote-icon {

@@ -138,7 +138,7 @@
         <div class="sidebar-section">
             <nav class="sidebar-nav">
                 <!-- Home Link (Active) -->
-                <a href="#" class="sidebar-link active">
+                <a href="#" class="sidebar-link active" data-feed-mode="posts">
                     <svg class="sidebar-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                         <polyline points="9 22 9 12 15 12 15 22"></polyline>
@@ -147,7 +147,7 @@
                 </a>
 
                 <!-- Popular NGOs Link -->
-                <a href="#" class="sidebar-link">
+                <a href="#" class="sidebar-link" data-feed-mode="popular-ngos">
                     <svg class="sidebar-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="23 6 13.5 15.5 8.5 10.5 1 17"></polyline>
                         <polyline points="17 6 23 6 23 12"></polyline>
@@ -242,7 +242,7 @@
         <main class="feed-container">
             <!-- Feed Header -->
             <div class="feed-header">
-                <h2 class="feed-title">Feed <span class="breadcrumb-separator">• Trending causes near you</span></h2>
+                <h2 class="feed-title"><span data-feed-title>Feed</span> <span class="breadcrumb-separator" data-feed-breadcrumb>• Trending causes near you</span></h2>
             </div>
 
             <!-- Posts Feed -->
@@ -298,6 +298,7 @@
 
     <script>
         window.__HOME_FEED_POSTS__ = <%- homeFeedPostsJson %>;
+        window.__HOME_POPULAR_NGO_PROFILES__ = <%- homePopularNgoProfilesJson %>;
     </script>
     <script src="/home.js"></script>
 </body>
