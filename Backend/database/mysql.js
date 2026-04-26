@@ -8,7 +8,7 @@ const connectionConfig = {
     host: process.env.MYSQL_HOST || 'localhost',
     user: process.env.MYSQL_USER || 'root',
     password: process.env.MYSQL_PASSWORD || '',
-    database: process.env.MYSQL_DATABASE || 'HelpConnect',
+    database: process.env.MYSQL_DATABASE || 'MadadSetu',
     port: Number(process.env.MYSQL_PORT || 3306),
     connectTimeout: Number(process.env.MYSQL_CONNECT_TIMEOUT || 5000),
     waitForConnections: true,
@@ -224,7 +224,7 @@ function normalizeSingleUserFeedPostRow(row) {
 async function ensureDatabase() {
     if (!initPromise) {
         initPromise = (async () => {
-            await serverPool.query('CREATE DATABASE IF NOT EXISTS `HelpConnect` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
+            await serverPool.query('CREATE DATABASE IF NOT EXISTS `MadadSetu` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
 
             if (!appPool) {
                 appPool = mysql.createPool(connectionConfig);

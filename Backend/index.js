@@ -1,11 +1,11 @@
 const express =require ('express');
 const fs = require('fs');
 const app = express();
-const port = Number(process.env.PORT || 8080);
+const port = process.env.PORT || 8080;
 const path = require('path');
 const crypto = require('crypto');
 const multer = require('multer');
-const helpConnectDb = require('./database/mysql');
+const madadsetuDb = require('./database/mysql');
 
 const frontendRootDir = path.join(__dirname, '..', 'Frontend');
 const frontendPublicDir = path.join(frontendRootDir, 'public');
@@ -162,7 +162,7 @@ async function getLoggedInNgo(req) {
         return null;
     }
 
-    return helpConnectDb.getNgoById(ngoId);
+    return madadsetuDb.getNgoById(ngoId);
 }
 
 async function getLoggedInUser(req) {
@@ -173,7 +173,7 @@ async function getLoggedInUser(req) {
         return null;
     }
 
-    return helpConnectDb.getSingleUserById(userId);
+    return madadsetuDb.getSingleUserById(userId);
 }
 
 async function safeGetLoggedInNgo(req) {
@@ -208,7 +208,7 @@ async function safeListRecentSingleUserFeedPosts(limit = 12) {
     }
 
     try {
-        return await helpConnectDb.listRecentSingleUserFeedPosts(limit);
+        return await madadsetuDb.listRecentSingleUserFeedPosts(limit);
     } catch (error) {
         console.error('Unable to load home feed posts:', error);
         return [];
@@ -221,7 +221,7 @@ async function safeListNgoAccounts() {
     }
 
     try {
-        return await helpConnectDb.listNgoAccounts();
+        return await madadsetuDb.listNgoAccounts();
     } catch (error) {
         console.error('Unable to load NGO accounts:', error);
         return [];
@@ -234,7 +234,7 @@ async function safeListSingleUserPosts(userId) {
     }
 
     try {
-        return await helpConnectDb.listSingleUserPosts(userId);
+        return await madadsetuDb.listSingleUserPosts(userId);
     } catch (error) {
         console.error('Unable to load user posts:', error);
         return [];
@@ -280,7 +280,7 @@ function normalizeNgoLookupKey(value) {
 
 function hashText(value) {
     let hash = 0;
-    const source = String(value || 'helpconnect');
+    const source = String(value || 'madadsetu');
 
     for (let index = 0; index < source.length; index += 1) {
         hash = (hash * 31 + source.charCodeAt(index)) >>> 0;
@@ -503,7 +503,7 @@ function buildFallbackNgoProfileData(displayName, orgType) {
 
     return {
         orgType: inferredType,
-        website: `${baseWebsiteSlug || 'helpconnect'}.org`,
+        website: `${baseWebsiteSlug || 'madadsetu'}.org`,
         location: pickSeededValue(seed >> 1, cityOptions),
         foundedLabel: `Founded ${2010 + (seed % 13)}`,
         profileStatusLabel: 'Demo profile preview',
@@ -760,7 +760,7 @@ function buildNgoProfileViewModel(ngo) {
     const recentHistory = history.length ? history : [{
         type: 'signup',
         title: 'Account created',
-        description: `${ngo.orgName} joined HelpConnect`,
+        description: `${ngo.orgName} joined MadadSetu`,
         date: ngo.submittedAt,
     }];
 
@@ -1038,7 +1038,7 @@ app.post('/profile/picture', handleProfilePictureUpload, async (req, res) => {
     const profilePictureUrl = getProfilePictureUrl(req.file);
 
     try {
-        const updated = await helpConnectDb.updateSingleUserProfilePicture(user.id, profilePictureUrl, req.file.originalname);
+        const updated = await madadsetuDb.updateSingleUserProfilePicture(user.id, profilePictureUrl, req.file.originalname);
 
         if (!updated) {
             await removeUploadedProfilePicture(profilePictureUrl);
@@ -1104,7 +1104,7 @@ app.post('/ngo/signup', async (req, res) => {
     }
 
     try {
-        await helpConnectDb.createNgoAccount({
+        await madadsetuDb.createNgoAccount({
             orgName,
             email,
             phone,
@@ -1145,7 +1145,7 @@ app.get('/ngo/login', (req, res) => {
 
 app.post('/ngo/login', async (req, res) => {
     const { emailOrMobile, password } = req.body;
-    const authenticatedNgo = await helpConnectDb.authenticateNgo(emailOrMobile, password);
+    const authenticatedNgo = await madadsetuDb.authenticateNgo(emailOrMobile, password);
 
     if (!authenticatedNgo) {
         return res.status(401).render('ngo-login', {
@@ -1221,7 +1221,7 @@ app.post('/user/signup', async (req, res) => {
     }
 
     try {
-        const createdUser = await helpConnectDb.createSingleUserAccount({
+        const createdUser = await madadsetuDb.createSingleUserAccount({
             name,
             username,
             emailOrMobile,
@@ -1264,7 +1264,7 @@ app.post('/user/login', async (req, res) => {
         });
     }
 
-    const authenticatedUser = await helpConnectDb.authenticateSingleUser(emailOrMobile, password);
+    const authenticatedUser = await madadsetuDb.authenticateSingleUser(emailOrMobile, password);
 
     if (!authenticatedUser) {
         return res.status(401).render('user-login', {
@@ -1306,7 +1306,7 @@ app.post('/profile/posts', handleProfilePostUpload, async (req, res) => {
     }
 
     try {
-        const createdPost = await helpConnectDb.createSingleUserPost({
+        const createdPost = await madadsetuDb.createSingleUserPost({
             userId: user.id,
             title,
             body,
@@ -1357,13 +1357,13 @@ app.delete('/profile/posts/:postId', async (req, res) => {
         return res.status(400).json({ error: 'Invalid post id.' });
     }
 
-    const post = await helpConnectDb.getSingleUserPostById(postId);
+    const post = await madadsetuDb.getSingleUserPostById(postId);
 
     if (!post || Number(post.userId) !== Number(user.id)) {
         return res.status(404).json({ error: 'Post not found.' });
     }
 
-    const deleted = await helpConnectDb.deleteSingleUserPost(user.id, postId);
+    const deleted = await madadsetuDb.deleteSingleUserPost(user.id, postId);
 
     if (!deleted) {
         return res.status(404).json({ error: 'Post not found.' });
@@ -1379,14 +1379,14 @@ app.delete('/profile/posts/:postId', async (req, res) => {
 async function startServer() {
     try {
         if (shouldUseDatabase) {
-            await helpConnectDb.ensureDatabase();
+            await madadsetuDb.ensureDatabase();
         }
 
         app.listen(port, () => {
             console.log(`Server is running on port ${port}`);
         });
     } catch (error) {
-        console.error('Failed to initialize the HelpConnect database:', error);
+        console.error('Failed to initialize the MadadSetu database:', error);
         process.exit(1);
     }
 }

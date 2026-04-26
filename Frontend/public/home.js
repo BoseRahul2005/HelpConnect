@@ -1,7 +1,7 @@
 // Mobile Menu Toggle
 document.addEventListener('DOMContentLoaded', function() {
     const userFeedPosts = Array.isArray(window.__HOME_FEED_POSTS__) ? window.__HOME_FEED_POSTS__ : [];
-    const followedNgoStorageKey = 'helpconnect.followedNgos';
+    const followedNgoStorageKey = 'madadsetu.followedNgos';
 
     function createNgoProfilePath(name) {
         const cleanedName = String(name || '').trim();

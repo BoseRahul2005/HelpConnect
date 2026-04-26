@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const followButton = document.querySelector('[data-ngo-follow-button]');
     const shell = document.querySelector('[data-ngo-profile-shell]');
     const ngoDisplayName = shell?.dataset.ngoDisplayName || document.title.replace(/\s*\|.*$/, '').trim() || 'NGO';
-    const followStorageKey = 'helpconnect.followedNgos';
+    const followStorageKey = 'madadsetu.followedNgos';
 
     function normalizeNgoKey(value) {
         return String(value || '')
