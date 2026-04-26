@@ -8,7 +8,7 @@
 	<link rel="stylesheet" href="/profile-page.css">
 </head>
 <body>
-	<main class="profile-page-shell" data-profile-display-name="<%= profileDisplayName %>" data-profile-subtitle="<%= profileSubtitle %>" data-profile-picture-url="<%= profilePictureUrl || '' %>">
+	<main class="profile-page-shell" data-profile-account-type="<%= profileAccountType || '' %>" data-profile-display-name="<%= profileDisplayName %>" data-profile-subtitle="<%= profileSubtitle %>" data-profile-picture-url="<%= profilePictureUrl || '' %>" data-profile-logout-url="<%= profileLogoutUrl || '/logout' %>" data-profile-delete-url="<%= profileDeleteUrl || '' %>">
 		<section class="profile-header">
 			<button type="button" class="profile-avatar profile-avatar-button" data-profile-avatar-button aria-label="Change profile picture">
 				<img class="profile-avatar-image" data-profile-avatar-image src="<%= profilePictureUrl || '' %>" alt="<%= profileDisplayName %> profile picture" <%= profilePictureUrl ? '' : 'hidden' %>>
@@ -25,6 +25,20 @@
 			<div class="profile-identity">
 				<h1 class="profile-display-name"><%= profileDisplayName %></h1>
 				<p class="profile-secondary-name"><%= profileSubtitle %></p>
+			</div>
+
+			<div class="profile-shell-menu" data-profile-shell-menu>
+				<button type="button" class="profile-menu-button" data-profile-menu-button aria-label="Open account menu" aria-expanded="false" aria-haspopup="menu" aria-controls="profileActionsMenu">
+					<span class="profile-menu-icon" aria-hidden="true">
+						<span></span>
+						<span></span>
+						<span></span>
+					</span>
+				</button>
+				<div class="profile-menu-card" id="profileActionsMenu" data-profile-menu-card hidden>
+					<button type="button" class="profile-menu-action" data-profile-logout-button>Log out</button>
+					<button type="button" class="profile-menu-action profile-menu-action-danger" data-profile-delete-button>Delete</button>
+				</div>
 			</div>
 		</section>
 

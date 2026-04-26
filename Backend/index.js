@@ -792,6 +792,9 @@ function buildNgoProfileViewModel(ngo) {
         formatCurrency,
         profileDisplayName: ngo.orgName,
         profileSubtitle: ngoHandle,
+        profileAccountType: 'ngo',
+        profileLogoutUrl: '/logout',
+        profileDeleteUrl: '/ngo/delete',
         profileStats: [
             {
                 label: 'Followers',
@@ -839,6 +842,9 @@ function buildUserProfileViewModel(user, posts = []) {
     return {
         profileDisplayName: displayName,
         profileSubtitle: fullName,
+        profileAccountType: 'user',
+        profileLogoutUrl: '/logout',
+        profileDeleteUrl: '/profile/delete',
         profilePictureUrl: user.profilePictureUrl || null,
         profilePictureName: user.profilePictureName || null,
         profilePosts,
@@ -985,6 +991,19 @@ async function removeUploadedProfilePicture(filePath) {
     } catch {
         // Ignore missing files so updates remain resilient.
     }
+}
+
+function clearUserAuthCookie(res) {
+    res.clearCookie('userAuthId', { path: '/' });
+}
+
+function clearNgoAuthCookie(res) {
+    res.clearCookie('ngoAuthId', { path: '/' });
+}
+
+function clearAllAuthCookies(res) {
+    clearUserAuthCookie(res);
+    clearNgoAuthCookie(res);
 }
 
 // Routes
@@ -1174,7 +1193,103 @@ app.get('/ngo/dashboard', async (req, res) => {
 });
 
 app.get('/ngo/logout', (req, res) => {
-    res.clearCookie('ngoAuthId', { path: '/' });
+    clearNgoAuthCookie(res);
+    return res.redirect('/');
+});
+
+app.get('/logout', (req, res) => {
+    clearAllAuthCookies(res);
+    return res.redirect('/');
+});
+
+app.post('/profile/delete', async (req, res) => {
+    const cookies = parseCookies(req.headers.cookie || '');
+    const userId = cookies.userAuthId;
+
+    if (!userId) {
+        if (req.accepts('json')) {
+            return res.status(401).json({ error: 'Please log in again to delete your account.' });
+        }
+
+        return res.redirect('/user/login');
+    }
+
+    const user = await madadsetuDb.getSingleUserById(userId);
+
+    if (!user) {
+        clearUserAuthCookie(res);
+
+        if (req.accepts('json')) {
+            return res.status(404).json({ error: 'Account not found.' });
+        }
+
+        return res.redirect('/user/login');
+    }
+
+    const userPosts = await madadsetuDb.listSingleUserPosts(user.id);
+
+    await Promise.all(userPosts.map((post) => removeUploadedProfilePostImage(post.imageUrl)));
+    await removeUploadedProfilePicture(user.profilePictureUrl);
+
+    const deleted = await madadsetuDb.deleteSingleUserAccount(user.id);
+
+    if (!deleted) {
+        if (req.accepts('json')) {
+            return res.status(500).json({ error: 'Unable to delete the account right now.' });
+        }
+
+        return res.redirect('/user/login');
+    }
+
+    clearUserAuthCookie(res);
+
+    if (req.accepts('json')) {
+        return res.json({ success: true, redirectUrl: '/' });
+    }
+
+    return res.redirect('/');
+});
+
+app.post('/ngo/delete', async (req, res) => {
+    const cookies = parseCookies(req.headers.cookie || '');
+    const ngoId = cookies.ngoAuthId;
+
+    if (!ngoId) {
+        if (req.accepts('json')) {
+            return res.status(401).json({ error: 'Please log in again to delete your account.' });
+        }
+
+        return res.redirect('/ngo/login');
+    }
+
+    const ngo = await madadsetuDb.getNgoById(ngoId);
+
+    if (!ngo) {
+        clearNgoAuthCookie(res);
+
+        if (req.accepts('json')) {
+            return res.status(404).json({ error: 'Account not found.' });
+        }
+
+        return res.redirect('/ngo/login');
+    }
+
+    const deleted = await madadsetuDb.deleteNgoAccount(ngo.id);
+
+    if (!deleted) {
+        if (req.accepts('json')) {
+            return res.status(500).json({ error: 'Unable to delete the account right now.' });
+        }
+
+        return res.redirect('/ngo/login');
+    }
+
+    clearNgoAuthCookie(res);
+
+    if (req.accepts('json')) {
+        return res.json({ success: true, redirectUrl: '/' });
+    }
+
     return res.redirect('/');
 });
 

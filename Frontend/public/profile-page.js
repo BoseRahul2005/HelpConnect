@@ -2,11 +2,18 @@ document.addEventListener('DOMContentLoaded', () => {
 	const shell = document.querySelector('.profile-page-shell');
 	const profileDisplayName = shell?.dataset.profileDisplayName || 'You';
 	const profileSubtitle = shell?.dataset.profileSubtitle || '';
+	const profileAccountType = shell?.dataset.profileAccountType || 'user';
+	const profileLogoutUrl = shell?.dataset.profileLogoutUrl || '/logout';
+	const profileDeleteUrl = shell?.dataset.profileDeleteUrl || '';
 	let profilePictureUrl = shell?.dataset.profilePictureUrl || '';
 	const profileAvatarButton = document.querySelector('[data-profile-avatar-button]');
 	const profileAvatarImage = document.querySelector('[data-profile-avatar-image]');
 	const profileAvatarPlaceholder = document.querySelector('[data-profile-avatar-placeholder]');
 	const profilePictureInput = document.querySelector('[data-profile-picture-input]');
+	const profileMenuButton = document.querySelector('[data-profile-menu-button]');
+	const profileMenuCard = document.querySelector('[data-profile-menu-card]');
+	const profileMenuLogoutButton = document.querySelector('[data-profile-logout-button]');
+	const profileMenuDeleteButton = document.querySelector('[data-profile-delete-button]');
 	const tabs = Array.from(document.querySelectorAll('[data-profile-tab]'));
 	const panels = Array.from(document.querySelectorAll('[data-profile-panel]'));
 	const createPostButton = document.querySelector('[data-create-post-button]');
@@ -36,6 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	let selectedImagePreviewUrl = null;
 	let composerFundraiseOpen = false;
 	let composerEmojiOpen = false;
+	let profileMenuOpen = false;
 	let profilePictureUploadInProgress = false;
 
 	function syncProfileAvatarImage(nextProfilePictureUrl) {
@@ -174,6 +182,77 @@ document.addEventListener('DOMContentLoaded', () => {
 			composerEmojiPicker.hidden = !isVisible;
 		}
 		composerEmojiButton?.classList.toggle('is-active', isVisible);
+	}
+
+	function setProfileMenuVisible(isVisible, returnFocus = false) {
+		if (!profileMenuButton || !profileMenuCard) {
+			return;
+		}
+
+		profileMenuOpen = isVisible;
+		profileMenuCard.hidden = !isVisible;
+		profileMenuButton.classList.toggle('is-active', isVisible);
+		profileMenuButton.setAttribute('aria-expanded', isVisible ? 'true' : 'false');
+
+		if (isVisible) {
+			window.requestAnimationFrame(() => {
+				profileMenuLogoutButton?.focus();
+			});
+		} else if (returnFocus) {
+			profileMenuButton.focus();
+		}
+	}
+
+	function toggleProfileMenu() {
+		setProfileMenuVisible(!profileMenuOpen);
+	}
+
+	function getProfileDeleteConfirmationMessage() {
+		if (profileAccountType === 'ngo') {
+			return 'Delete this NGO account? This cannot be undone.';
+		}
+
+		return 'Delete this profile and all of its posts? This cannot be undone.';
+	}
+
+	function handleProfileLogout() {
+		setProfileMenuVisible(false);
+		window.location.assign(profileLogoutUrl || '/');
+	}
+
+	async function handleProfileDelete() {
+		if (!profileDeleteUrl) {
+			window.alert('Account deletion is unavailable right now.');
+			return;
+		}
+
+		const confirmed = window.confirm(getProfileDeleteConfirmationMessage());
+
+		if (!confirmed || !profileMenuDeleteButton) {
+			return;
+		}
+
+		profileMenuDeleteButton.disabled = true;
+
+		try {
+			const response = await fetch(profileDeleteUrl, {
+				method: 'POST',
+				headers: {
+					'Accept': 'application/json',
+				},
+			});
+
+			const payload = await response.json().catch(() => ({}));
+
+			if (!response.ok) {
+				throw new Error(payload.error || 'Unable to delete your account right now.');
+			}
+
+			window.location.assign(payload.redirectUrl || '/');
+		} catch (error) {
+			window.alert(error.message);
+			profileMenuDeleteButton.disabled = false;
+		}
 	}
 
 	function toggleFundraisePanel() {
@@ -572,6 +651,9 @@ document.addEventListener('DOMContentLoaded', () => {
 	});
 
 	createPostButton?.addEventListener('click', openComposer);
+	profileMenuButton?.addEventListener('click', toggleProfileMenu);
+	profileMenuLogoutButton?.addEventListener('click', handleProfileLogout);
+	profileMenuDeleteButton?.addEventListener('click', handleProfileDelete);
 	profileAvatarButton?.addEventListener('click', openProfilePicturePicker);
 	profilePictureInput?.addEventListener('change', handleProfilePictureSelection);
 	composerCloseButton?.addEventListener('click', closeComposer);
@@ -588,6 +670,19 @@ document.addEventListener('DOMContentLoaded', () => {
 		if (composerEmojiOpen) {
 			setEmojiPickerVisible(false);
 		}
+	});
+	document.addEventListener('click', (event) => {
+		if (!profileMenuOpen || !profileMenuButton || !profileMenuCard) {
+			return;
+		}
+
+		const clickedTarget = event.target;
+
+		if (profileMenuButton.contains(clickedTarget) || profileMenuCard.contains(clickedTarget)) {
+			return;
+		}
+
+		setProfileMenuVisible(false);
 	});
 	postsList?.addEventListener('click', async (event) => {
 		const deleteButton = event.target.closest('[data-post-delete-button]');
@@ -627,6 +722,10 @@ document.addEventListener('DOMContentLoaded', () => {
 	renderEmojiPicker();
 
 	document.addEventListener('keydown', (event) => {
+		if (event.key === 'Escape' && profileMenuOpen) {
+			setProfileMenuVisible(false, true);
+		}
+
 		if (event.key === 'Escape' && composer && !composer.hidden) {
 			closeComposer();
 		}

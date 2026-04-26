@@ -502,6 +502,30 @@ async function deleteSingleUserPost(userId, postId) {
     return result.affectedRows > 0;
 }
 
+async function deleteNgoAccount(ngoId) {
+    const normalizedNgoId = Number(ngoId);
+
+    if (!Number.isInteger(normalizedNgoId) || normalizedNgoId <= 0) {
+        return false;
+    }
+
+    const [result] = await execute('DELETE FROM ngo_users WHERE id = ? LIMIT 1', [normalizedNgoId]);
+
+    return result.affectedRows > 0;
+}
+
+async function deleteSingleUserAccount(userId) {
+    const normalizedUserId = Number(userId);
+
+    if (!Number.isInteger(normalizedUserId) || normalizedUserId <= 0) {
+        return false;
+    }
+
+    const [result] = await execute('DELETE FROM single_users WHERE id = ? LIMIT 1', [normalizedUserId]);
+
+    return result.affectedRows > 0;
+}
+
 async function createSingleUserAccount(userObject) {
     const name = String(userObject.name || '').trim();
     const username = String(userObject.username || '').trim();
@@ -568,6 +592,8 @@ module.exports = {
     listRecentSingleUserFeedPosts,
     createSingleUserPost,
     deleteSingleUserPost,
+    deleteNgoAccount,
+    deleteSingleUserAccount,
     createSingleUserAccount,
     authenticateSingleUser,
 };
