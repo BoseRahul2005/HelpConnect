@@ -399,7 +399,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return `
                 <article class="post-card ngo-profile-card" data-ngo-profile-card="${ngoName}" data-ngo-profile-card-url="${profileUrl}" tabindex="0" role="link" aria-label="Open ${ngoName} profile">
                     <div class="post-header ngo-profile-header">
-                        <div class="post-header-left">
+                        <div class="ngo-profile-header-left">
                             <a class="post-author-link ngo-profile-link" href="${profileUrl}" aria-label="Open ${ngoName} profile">
                                 <div class="post-avatar ${profile.avatarColor}">${initials}</div>
                                 <span class="ngo-profile-link-copy">
@@ -407,10 +407,14 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <span class="ngo-profile-subtitle">${escapeHtml(profile.orgTypeLabel)}</span>
                                 </span>
                             </a>
+                            <button class="btn-follow ngo-profile-follow-btn${following ? ' following' : ''}" type="button" data-ngo-profile-follow="${ngoName}" aria-pressed="${following ? 'true' : 'false'}">${following ? 'Following' : 'Follow'}</button>
                         </div>
-                        <div class="ngo-profile-score" aria-label="${scoreLabel}">
-                            <span class="ngo-profile-score-value">${formatCompactNumber(profile.totalUpvotes)}</span>
-                            <span class="ngo-profile-score-label">upvotes</span>
+                        <div class="ngo-profile-header-right">
+                            <button class="btn-learn-more ngo-profile-view-btn" type="button" data-ngo-profile-view="${profileUrl}">View Profile</button>
+                            <div class="ngo-profile-score" aria-label="${scoreLabel}">
+                                <span class="ngo-profile-score-value">${formatCompactNumber(profile.totalUpvotes)}</span>
+                                <span class="ngo-profile-score-label">upvotes</span>
+                            </div>
                         </div>
                     </div>
 
@@ -422,13 +426,6 @@ document.addEventListener('DOMContentLoaded', function() {
                             <span class="ngo-profile-stat">${postCountLabel}</span>
                             <span class="ngo-profile-stat">${followerLabel}</span>
                             ${websiteLabel}
-                        </div>
-                    </div>
-
-                    <div class="post-actions ngo-profile-actions">
-                        <div class="post-actions-left">
-                            <button class="btn-donate ngo-profile-view-btn" type="button" data-ngo-profile-view="${profileUrl}">View Profile</button>
-                            <button class="btn-follow ngo-profile-follow-btn${following ? ' following' : ''}" type="button" data-ngo-profile-follow="${ngoName}" aria-pressed="${following ? 'true' : 'false'}">${following ? 'Following' : 'Follow'}</button>
                         </div>
                     </div>
                 </article>
