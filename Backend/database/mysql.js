@@ -234,6 +234,115 @@ async function ensureDatabase() {
             await appPool.query(singleUserTableSql);
             await appPool.query(singleUserPostsTableSql);
 
+            const [ngoColumnRows] = await appPool.query(
+                `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'ngo_users'`,
+                [connectionConfig.database]
+            );
+            const ngoColumns = new Set(ngoColumnRows.map((row) => row.COLUMN_NAME));
+
+            if (!ngoColumns.has('category')) {
+                await appPool.query('ALTER TABLE ngo_users ADD COLUMN category VARCHAR(50) DEFAULT "community-development" AFTER org_type');
+            }
+
+            // Migrate existing NGOs with NULL or empty category values
+            const [ngoWithoutCategory] = await appPool.query(
+                'SELECT id FROM ngo_users WHERE category IS NULL OR category = "" ORDER BY id'
+            );
+            
+            if (ngoWithoutCategory.length > 0) {
+                const categories = ['education', 'healthcare', 'disaster-relief', 'animal-welfare', 'community-development'];
+                
+                for (let i = 0; i < ngoWithoutCategory.length; i++) {
+                    const ngoId = ngoWithoutCategory[i].id;
+                    const assignedCategory = categories[i % categories.length];
+                    await appPool.query(
+                        'UPDATE ngo_users SET category = ? WHERE id = ?',
+                        [assignedCategory, ngoId]
+                    );
+                }
+            }
+
+            // Insert demo NGOs if they don't exist (50+ per category)
+            // Generate demo NGOs programmatically with unique phone numbers
+            const categoryNames = {
+                education: ['Education', 'Learning', 'Literacy', 'School', 'Knowledge', 'Scholar', 'Academic', 'Institute', 'Center', 'Hub'],
+                healthcare: ['Healthcare', 'Medical', 'Health', 'Clinic', 'Hospital', 'Wellness', 'Care', 'Medicine', 'Doctor', 'Nursing'],
+                'disaster-relief': ['Disaster', 'Relief', 'Emergency', 'Rescue', 'Recovery', 'Support', 'Aid', 'Response', 'Crisis', 'Help'],
+                'animal-welfare': ['Wildlife', 'Animal', 'Pet', 'Conservation', 'Sanctuary', 'Rescue', 'Protection', 'Care', 'Foundation', 'Trust']
+            };
+
+            const actionWords = ['Foundation', 'Initiative', 'Program', 'Network', 'Center', 'Trust', 'Fund', 'Services', 'Organization', 'Society'];
+            const locationNames = ['India', 'Delhi', 'Mumbai', 'Bangalore', 'Chennai', 'Kolkata', 'Hyderabad', 'Pune', 'Ahmedabad', 'National'];
+
+            const demoNgos = [];
+            let phoneCounter = 9000000000;
+
+            // Generate 50 NGOs per category
+            const categoriesToGenerate = ['education', 'healthcare', 'disaster-relief', 'animal-welfare'];
+            
+            for (const category of categoriesToGenerate) {
+                for (let i = 1; i <= 50; i++) {
+                    const categoryName = categoryNames[category][i % categoryNames[category].length];
+                    const actionWord = actionWords[i % actionWords.length];
+                    const location = locationNames[i % locationNames.length];
+                    
+                    const ngoName = `${categoryName} ${actionWord} ${i}`;
+                    const email = `demo_${category}_${i}@ngo.org`;
+                    const phone = String(phoneCounter++);
+                    
+                    demoNgos.push({
+                        name: ngoName,
+                        email: email,
+                        phone: phone,
+                        type: category === 'disaster-relief' ? 'emergency' : category === 'animal-welfare' ? 'conservation' : category,
+                        category: category,
+                        website: `https://${category.replace('-', '')}-${i}.ngo`
+                    });
+                }
+            }
+
+            for (const demoNgo of demoNgos) {
+                const [existing] = await appPool.query(
+                    'SELECT id FROM ngo_users WHERE email = ? LIMIT 1',
+                    [demoNgo.email]
+                );
+
+                if (existing.length === 0) {
+                    const password = 'demo123456';
+                    const { hash, salt } = hashPassword(password);
+                    
+                    try {
+                        await appPool.query(
+                            `INSERT INTO ngo_users (org_name, email, phone, org_type, category, website, password_hash, password_salt, terms_accepted, posts, comments, donations, followers, saved_items, upvoted, history) 
+                             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                            [
+                                demoNgo.name,
+                                demoNgo.email,
+                                demoNgo.phone,
+                                demoNgo.type,
+                                demoNgo.category,
+                                demoNgo.website,
+                                hash,
+                                salt,
+                                1, // terms_accepted
+                                JSON.stringify([]),
+                                JSON.stringify([]),
+                                JSON.stringify([]),
+                                JSON.stringify([]),
+                                JSON.stringify([]),
+                                JSON.stringify([]),
+                                JSON.stringify([])
+                            ]
+                        );
+                        console.log(`✅ Demo NGO created: ${demoNgo.name}`);
+                    } catch (insertError) {
+                        if (!insertError.message.includes('Duplicate entry')) {
+                            console.error(`❌ Error inserting demo NGO ${demoNgo.name}:`, insertError.message);
+                        }
+                    }
+                }
+            }
+
             const [singleUserColumnRows] = await appPool.query(
                 `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'single_users'`,
                 [connectionConfig.database]
@@ -292,6 +401,14 @@ async function getNgoById(id) {
 
 async function listNgoAccounts() {
     const [rows] = await query('SELECT * FROM ngo_users ORDER BY submitted_at DESC');
+    return rows.map(normalizeNgoRow);
+}
+
+async function listNgoAccountsByCategory(category) {
+    const categoryValue = String(category || 'community-development').trim().toLowerCase();
+    console.log('Querying NGOs for category:', categoryValue);
+    const [rows] = await query('SELECT * FROM ngo_users WHERE category = ? ORDER BY submitted_at DESC', [categoryValue]);
+    console.log('Found NGOs:', rows?.length || 0, 'for category:', categoryValue);
     return rows.map(normalizeNgoRow);
 }
 
@@ -376,6 +493,11 @@ async function getSingleUserById(id) {
     return normalizeSingleUserRow(rows[0]);
 }
 
+async function getSingleUserByUsername(username) {
+    const [rows] = await execute('SELECT * FROM single_users WHERE username = ? LIMIT 1', [username]);
+    return normalizeSingleUserRow(rows[0]);
+}
+
 async function getSingleUserPostById(id) {
     const [rows] = await execute('SELECT * FROM single_user_posts WHERE id = ? LIMIT 1', [id]);
     return normalizeSingleUserPostRow(rows[0]);
@@ -384,6 +506,19 @@ async function getSingleUserPostById(id) {
 async function listSingleUsers() {
     const [rows] = await query('SELECT * FROM single_users ORDER BY submitted_at DESC');
     return rows.map(normalizeSingleUserRow);
+}
+
+async function listSingleUsersForSearch() {
+    const [rows] = await query(
+        `SELECT id, name, username, profile_picture_path, submitted_at FROM single_users ORDER BY submitted_at DESC`
+    );
+    return rows.map((row) => ({
+        id: row.id,
+        name: row.name,
+        username: row.username,
+        profilePictureUrl: row.profile_picture_path,
+        submittedAt: row.submitted_at,
+    }));
 }
 
 async function listSingleUserPosts(userId) {
@@ -427,6 +562,36 @@ async function listRecentSingleUserFeedPosts(limit = 12) {
     );
 
     return rows.map(normalizeSingleUserFeedPostRow);
+}
+
+async function listAllSingleUserFeedPosts() {
+    const [rows] = await execute(
+        `SELECT
+            p.*,
+            u.name AS user_name,
+            u.username AS user_username
+        FROM single_user_posts p
+        INNER JOIN single_users u ON u.id = p.user_id
+        ORDER BY p.submitted_at DESC, p.id DESC`
+    );
+
+    return rows.map(normalizeSingleUserFeedPostRow);
+}
+
+async function getSingleUserFeedPostById(id) {
+    const [rows] = await execute(
+        `SELECT
+            p.*,
+            u.name AS user_name,
+            u.username AS user_username
+        FROM single_user_posts p
+        INNER JOIN single_users u ON u.id = p.user_id
+        WHERE p.id = ?
+        LIMIT 1`,
+        [id]
+    );
+
+    return normalizeSingleUserFeedPostRow(rows[0]);
 }
 
 async function createSingleUserPost(postObject) {
@@ -582,14 +747,19 @@ module.exports = {
     ensureDatabase,
     getNgoById,
     listNgoAccounts,
+    listNgoAccountsByCategory,
     createNgoAccount,
     authenticateNgo,
     getSingleUserById,
+    getSingleUserByUsername,
     listSingleUsers,
+    listSingleUsersForSearch,
     getSingleUserPostById,
     listSingleUserPosts,
+    getSingleUserFeedPostById,
     updateSingleUserProfilePicture,
     listRecentSingleUserFeedPosts,
+    listAllSingleUserFeedPosts,
     createSingleUserPost,
     deleteSingleUserPost,
     deleteNgoAccount,

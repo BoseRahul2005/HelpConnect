@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About MadadSetu — Bridging Hearts & Helping Hands</title>
+    <meta name="description" content="MadadSetu is a community-driven platform connecting people with verified NGOs, social causes, and meaningful opportunities. Discover our mission, vision, and the bridge of support we are building together.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/about.css">
+</head>
+<body>
+<%
+    const safeLoggedInNgo  = typeof loggedInNgo  !== 'undefined' ? loggedInNgo  : null;
+    const safeLoggedInUser = typeof loggedInUser !== 'undefined' ? loggedInUser : null;
+    const safeNgoInitials  = typeof ngoInitials  !== 'undefined' ? ngoInitials  : null;
+    const safeUserInitials = typeof userInitials !== 'undefined' ? userInitials : null;
+
+    const profileButton = safeLoggedInNgo
+        ? {
+            href: '/ngo/profile',
+            label: `Open NGO profile for ${safeLoggedInNgo.orgName}`,
+            title: safeLoggedInNgo.orgName,
+            text: safeNgoInitials,
+        }
+        : safeLoggedInUser
+            ? {
+                href: '/profile',
+                label: `Open profile for ${safeLoggedInUser.name}`,
+                title: safeLoggedInUser.name,
+                text: safeUserInitials,
+                pictureUrl: safeLoggedInUser.profilePictureUrl,
+            }
+            : null;
+%>
+
+    <!-- Navigation Bar -->
+    <nav class="navbar" aria-label="Site navigation">
+        <div class="nav-container">
+            <!-- Logo -->
+            <a class="nav-logo" href="/" aria-label="Go to MadadSetu home">
+                <svg class="logo-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <path d="M12 2C6.48 2 2 6.48 2 12C2 16.42 5.04 20.07 9 21.5C9 21.5 10 19.5 12 19.5C14 19.5 15 21.5 15 21.5C18.96 20.07 22 16.42 22 12C22 6.48 17.52 2 12 2Z" fill="#2E7D32"/>
+                    <path d="M12 5C13.66 5 15 6.34 15 8C15 9.66 13.66 11 12 11C10.34 11 9 9.66 9 8C9 6.34 10.34 5 12 5Z" fill="white"/>
+                </svg>
+                <span>MadadSetu</span>
+            </a>
+
+            <!-- Nav actions -->
+            <div style="display:flex; align-items:center; gap:12px;">
+                <a href="/" class="nav-back" id="nav-back-home">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M15 18l-6-6 6-6"/>
+                    </svg>
+                    Back to Home
+                </a>
+                <% if (profileButton) { %>
+                    <a href="<%= profileButton.href %>" class="btn-get-started profile-badge-about" aria-label="<%= profileButton.label %>" title="<%= profileButton.title %>">
+                        <% if (profileButton.pictureUrl) { %>
+                            <img class="profile-badge-image" src="<%= profileButton.pictureUrl %>" alt="" aria-hidden="true" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;">
+                        <% } else { %>
+                            <%= profileButton.text %>
+                        <% } %>
+                    </a>
+                <% } else { %>
+                    <a href="/get-started" class="btn-get-started" id="nav-get-started-btn">Get Started</a>
+                <% } %>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ─── Hero ─────────────────────────────────────── -->
+    <section class="about-hero" aria-labelledby="about-heading">
+        <div class="hero-inner">
+            <div class="hero-badge animate-in animate-in-delay-1">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="16" x2="12" y2="12"/>
+                    <line x1="12" y1="8" x2="12.01" y2="8"/>
+                </svg>
+                About Us
+            </div>
+
+            <h1 id="about-heading" class="animate-in animate-in-delay-2">
+                A <span class="hero-highlight">Bridge of Support</span><br>for Every Cause That Matters
+            </h1>
+
+            <p class="animate-in animate-in-delay-3">
+                MadadSetu is a community-driven platform built to connect people with NGOs, social causes, and meaningful opportunities to create real, lasting change.
+            </p>
+        </div>
+    </section>
+
+    <!-- ─── Stats Bar ─────────────────────────────────── -->
+    <div class="stats-bar" aria-label="Platform statistics">
+        <div class="stats-bar-inner">
+            <div class="stat-item animate-in animate-in-delay-1">
+                <div class="stat-value">50K+</div>
+                <div class="stat-label">Active Donors</div>
+            </div>
+            <div class="stat-item animate-in animate-in-delay-2">
+                <div class="stat-value">200+</div>
+                <div class="stat-label">Verified NGOs</div>
+            </div>
+            <div class="stat-item animate-in animate-in-delay-3">
+                <div class="stat-value">5</div>
+                <div class="stat-label">Cause Categories</div>
+            </div>
+            <div class="stat-item animate-in animate-in-delay-4">
+                <div class="stat-value">∞</div>
+                <div class="stat-label">Lives Touched</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── Main Content ──────────────────────────────── -->
+    <div class="about-main">
+
+        <!-- Left Column -->
+        <div class="about-content">
+
+            <!-- About Section -->
+            <section class="about-section animate-in animate-in-delay-1" aria-labelledby="about-platform-heading">
+                <p class="section-eyebrow">What We Do</p>
+                <h2 id="about-platform-heading">About MadadSetu</h2>
+                <p>
+                    MadadSetu is a community-driven platform built to connect people with NGOs, social causes, and meaningful opportunities to create change. Our mission is to make helping easier, faster, and more transparent by bringing trusted organizations and compassionate supporters together in one digital space.
+                </p>
+                <p>
+                    Whether it's supporting child education, healthcare, disaster relief, animal welfare, or urgent emergency cases, MadadSetu helps users discover causes that matter and contribute with confidence.
+                </p>
+                <p>
+                    We believe that even small actions can create a big impact. Through a simple and engaging platform, users can explore NGOs, follow causes, donate, stay updated, and become part of a growing community of changemakers.
+                </p>
+            </section>
+
+            <!-- Vision Block -->
+            <div class="vision-block animate-in animate-in-delay-2" aria-labelledby="vision-heading">
+                <p class="section-eyebrow">Our Vision</p>
+                <blockquote id="vision-heading">
+                    "To build a world where kindness is accessible, social support is connected, and every person has the power to make a difference."
+                </blockquote>
+            </div>
+
+            <!-- Mission Section -->
+            <section class="mission-section animate-in animate-in-delay-3" aria-labelledby="mission-heading">
+                <p class="section-eyebrow">Our Mission</p>
+                <h2 id="mission-heading">What Drives Us Every Day</h2>
+
+                <ul class="mission-list" aria-label="Mission points">
+                    <li>
+                        <div class="mission-icon" aria-hidden="true">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                <circle cx="9" cy="7" r="4"/>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                            </svg>
+                        </div>
+                        <div class="mission-text">
+                            <strong>Connect people with verified NGOs and causes</strong>
+                            <span>Trusted, vetted organizations you can support with full confidence.</span>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="mission-icon" aria-hidden="true">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                            </svg>
+                        </div>
+                        <div class="mission-text">
+                            <strong>Make donations and support more transparent</strong>
+                            <span>Clear progress tracking and full visibility into how contributions help.</span>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="mission-icon" aria-hidden="true">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                            </svg>
+                        </div>
+                        <div class="mission-text">
+                            <strong>Promote awareness for urgent social needs</strong>
+                            <span>Amplifying the stories and emergencies that need your attention most.</span>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="mission-icon" aria-hidden="true">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                            </svg>
+                        </div>
+                        <div class="mission-text">
+                            <strong>Build a caring and active community</strong>
+                            <span>Bringing together compassionate changemakers who believe kindness scales.</span>
+                        </div>
+                    </li>
+                </ul>
+            </section>
+
+            <!-- Why MadadSetu -->
+            <section class="why-section animate-in animate-in-delay-4" aria-labelledby="why-heading">
+                <p class="section-eyebrow">Why MadadSetu?</p>
+                <h2 id="why-heading">Every Bridge of Help Matters</h2>
+                <p>
+                    "MadadSetu" means a <strong>bridge of support</strong> — connecting those who want to help with those who need it most.
+                </p>
+                <p>
+                    Because every bridge of help matters. We exist to ensure that no cause goes unheard, no NGO goes unsupported, and no act of kindness goes unnoticed.
+                </p>
+                <span class="bridge-tagline">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
+                        <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+                        <line x1="9" y1="9" x2="9.01" y2="9"/>
+                        <line x1="15" y1="9" x2="15.01" y2="9"/>
+                    </svg>
+                    MadadSetu — Madad ka Setu
+                </span>
+            </section>
+        </div>
+
+        <!-- Right Sidebar -->
+        <aside class="about-sidebar" aria-label="More information">
+
+            <!-- Cause Categories -->
+            <div class="sidebar-card">
+                <div class="sidebar-card-header">
+                    <h3>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                        </svg>
+                        Causes We Support
+                    </h3>
+                </div>
+                <div class="sidebar-card-body">
+                    <div class="cause-tags">
+                        <a href="/?category=education" class="cause-tag green" id="cause-education">
+                            📚 Education
+                        </a>
+                        <a href="/?category=healthcare" class="cause-tag blue" id="cause-healthcare">
+                            ❤️ Healthcare
+                        </a>
+                        <a href="/?category=disaster-relief" class="cause-tag orange" id="cause-disaster">
+                            🌏 Disaster Relief
+                        </a>
+                        <a href="/?category=animal-welfare" class="cause-tag purple" id="cause-animals">
+                            🐾 Animal Welfare
+                        </a>
+                        <a href="/?category=emergency" class="cause-tag red" id="cause-emergency">
+                            🚨 Emergency Cases
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Our Values -->
+            <div class="sidebar-card">
+                <div class="sidebar-card-header">
+                    <h3>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                        </svg>
+                        Our Core Values
+                    </h3>
+                </div>
+                <div class="sidebar-card-body">
+                    <ul class="values-list" aria-label="Core values">
+                        <li><span class="value-dot" aria-hidden="true"></span> Transparency</li>
+                        <li><span class="value-dot" aria-hidden="true"></span> Community First</li>
+                        <li><span class="value-dot" aria-hidden="true"></span> Compassion at Scale</li>
+                        <li><span class="value-dot" aria-hidden="true"></span> Trust &amp; Verification</li>
+                        <li><span class="value-dot" aria-hidden="true"></span> Accessible Kindness</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- CTA Card -->
+            <div class="cta-card" aria-labelledby="cta-heading">
+                <% if (profileButton) { %>
+                    <h3 id="cta-heading">👋 Welcome back!</h3>
+                    <p>Thanks for being part of the MadadSetu community. Keep exploring causes and making a difference.</p>
+                    <a href="<%= profileButton.href %>" class="cta-btn" id="about-profile-cta">Go to Your Profile</a>
+                <% } else { %>
+                    <h3 id="cta-heading">🌍 Ready to Make a Difference?</h3>
+                    <p>Join 50,000+ donors and supporters who are already bridging the gap for those who need it most.</p>
+                    <a href="/get-started" class="cta-btn" id="about-get-started-cta">Start Helping Today</a>
+                <% } %>
+            </div>
+        </aside>
+
+    </div>
+
+    <script>
+        // Intersection Observer for scroll-in animations
+        const animateEls = document.querySelectorAll('.animate-in');
+        if ('IntersectionObserver' in window) {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '';
+                        entry.target.classList.add('visible');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.12 });
+
+            animateEls.forEach((el) => observer.observe(el));
+        } else {
+            // Fallback: just show all elements
+            animateEls.forEach((el) => { el.style.opacity = '1'; });
+        }
+    </script>
+
+</body>
+</html>

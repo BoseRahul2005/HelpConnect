@@ -216,6 +216,19 @@ async function safeListRecentSingleUserFeedPosts(limit = 12) {
     }
 }
 
+async function safeListAllSingleUserFeedPosts() {
+    if (!shouldUseDatabase) {
+        return [];
+    }
+
+    try {
+        return await madadsetuDb.listAllSingleUserFeedPosts();
+    } catch (error) {
+        console.error('Unable to load searchable feed posts:', error);
+        return [];
+    }
+}
+
 async function safeListNgoAccounts() {
     if (!shouldUseDatabase) {
         return [];
@@ -238,6 +251,19 @@ async function safeListSingleUserPosts(userId) {
         return await madadsetuDb.listSingleUserPosts(userId);
     } catch (error) {
         console.error('Unable to load user posts:', error);
+        return [];
+    }
+}
+
+async function safeListSingleUsersForSearch() {
+    if (!shouldUseDatabase) {
+        return [];
+    }
+
+    try {
+        return await madadsetuDb.listSingleUsersForSearch();
+    } catch (error) {
+        console.error('Unable to load user search index:', error);
         return [];
     }
 }
@@ -554,8 +580,87 @@ function buildFallbackNgoProfileData(displayName, orgType) {
     };
 }
 
+function buildPopularNgoDemoProfiles() {
+    const avatarPalette = ['avatar-green', 'avatar-blue', 'avatar-orange', 'avatar-purple', 'avatar-red'];
+
+    return [
+        {
+            orgName: 'Community Care Alliance',
+            orgTypeLabel: 'Humanitarian Aid',
+            totalUpvotes: 498,
+            followerCount: 18400,
+            postCount: 9,
+            highlightTitle: 'Flood Relief Kits for Riverside Families',
+            highlightSummary: 'Delivering emergency kits, hot meals, and temporary shelter support to flood-affected neighborhoods.',
+        },
+        {
+            orgName: 'Green Roots Collective',
+            orgTypeLabel: 'Environment',
+            totalUpvotes: 463,
+            followerCount: 14950,
+            postCount: 7,
+            highlightTitle: 'Riverbank Restoration Drive',
+            highlightSummary: 'Volunteers are planting native trees and restoring riverbanks to protect local ecosystems.',
+        },
+        {
+            orgName: 'Bright Futures Network',
+            orgTypeLabel: 'Education',
+            totalUpvotes: 431,
+            followerCount: 16220,
+            postCount: 11,
+            highlightTitle: 'Back-to-School Supply Program',
+            highlightSummary: 'School bags, books, and learning kits are being distributed to rural classrooms this month.',
+        },
+        {
+            orgName: 'Safe Steps Foundation',
+            orgTypeLabel: 'Women Empowerment',
+            totalUpvotes: 402,
+            followerCount: 12780,
+            postCount: 6,
+            highlightTitle: 'Emergency Support and Counseling',
+            highlightSummary: 'Creating safer access to counseling, support groups, and crisis-response resources.',
+        },
+        {
+            orgName: 'Pure Water Mission',
+            orgTypeLabel: 'Community Development',
+            totalUpvotes: 375,
+            followerCount: 10840,
+            postCount: 8,
+            highlightTitle: 'Clean Water Stations for Local Families',
+            highlightSummary: 'Installing filtered water stations and maintaining safe drinking water access across neighborhoods.',
+        },
+        {
+            orgName: 'Health Bridge Collective',
+            orgTypeLabel: 'Healthcare',
+            totalUpvotes: 348,
+            followerCount: 13110,
+            postCount: 10,
+            highlightTitle: 'Free Screening Camps and Medicine Support',
+            highlightSummary: 'Running mobile checkups, medicine drives, and health awareness camps in underserved areas.',
+        },
+    ].map((profile) => {
+        const displayName = profile.orgName;
+
+        return {
+            id: `demo-popular-${normalizeNgoLookupKey(displayName)}`,
+            orgName: displayName,
+            profileUrl: `/ngo/profile/${encodeURIComponent(displayName)}`,
+            orgType: 'other',
+            orgTypeLabel: profile.orgTypeLabel,
+            avatarInitials: getNgoInitials(displayName),
+            avatarColor: pickSeededValue(hashText(displayName), avatarPalette),
+            totalUpvotes: profile.totalUpvotes,
+            followerCount: profile.followerCount,
+            postCount: profile.postCount,
+            highlightTitle: profile.highlightTitle,
+            highlightSummary: profile.highlightSummary,
+            websiteLabel: null,
+        };
+    });
+}
+
 function buildPopularNgoFeedProfiles(ngoAccounts) {
-    return getNgoCollection(ngoAccounts)
+    const liveProfiles = getNgoCollection(ngoAccounts)
         .map((ngo) => {
             const displayName = String((ngo && ngo.orgName) || '').trim();
 
@@ -588,6 +693,29 @@ function buildPopularNgoFeedProfiles(ngoAccounts) {
             };
         })
         .filter(Boolean)
+        .sort((left, right) => (Number(right.totalUpvotes || 0) - Number(left.totalUpvotes || 0)) || (Number(right.followerCount || 0) - Number(left.followerCount || 0)) || String(left.orgName).localeCompare(String(right.orgName)))
+        .map((profile, index) => ({
+            ...profile,
+            rank: index + 1,
+            rankLabel: `#${index + 1}`,
+        }));
+
+    const combinedProfiles = [...liveProfiles, ...buildPopularNgoDemoProfiles()];
+    const uniqueProfiles = [];
+    const seenNgoKeys = new Set();
+
+    combinedProfiles.forEach((profile) => {
+        const ngoKey = normalizeNgoLookupKey(profile.orgName);
+
+        if (!ngoKey || seenNgoKeys.has(ngoKey)) {
+            return;
+        }
+
+        seenNgoKeys.add(ngoKey);
+        uniqueProfiles.push(profile);
+    });
+
+    return uniqueProfiles
         .sort((left, right) => (Number(right.totalUpvotes || 0) - Number(left.totalUpvotes || 0)) || (Number(right.followerCount || 0) - Number(left.followerCount || 0)) || String(left.orgName).localeCompare(String(right.orgName)))
         .map((profile, index) => ({
             ...profile,
@@ -955,6 +1083,103 @@ function buildUserProfileViewModel(user, posts = []) {
     };
 }
 
+function buildHomeDemoPosts() {
+    return [
+        {
+            id: 'demo-1',
+            ngoName: 'Heart Care NGO',
+            title: 'Help Needed for Child Heart Surgery',
+            description: 'Young Arjun, age 8, needs urgent heart surgery to save his life. The procedure costs ₹25,000 and every contribution brings us closer to our goal.',
+            raisedAmount: 18500,
+            goalAmount: 25000,
+            upvotes: 342,
+            avatarColor: 'avatar-green',
+            submittedAt: new Date(Date.now() - 86400000).toISOString(),
+        },
+        {
+            id: 'demo-2',
+            ngoName: 'Education First',
+            title: 'Build a School Library for Rural Children',
+            description: 'We are creating a library in a remote village school to provide access to quality education resources. Help us inspire young minds through reading.',
+            raisedAmount: 12750,
+            goalAmount: 20000,
+            upvotes: 258,
+            avatarColor: 'avatar-blue',
+            submittedAt: new Date(Date.now() - 172800000).toISOString(),
+        },
+        {
+            id: 'demo-3',
+            ngoName: 'Disaster Relief Fund',
+            title: 'Emergency Relief for Flood Victims',
+            description: 'Recent floods have displaced thousands of families. We urgently need funds for temporary shelter, food, and medical supplies for affected communities.',
+            raisedAmount: 45200,
+            goalAmount: 50000,
+            upvotes: 521,
+            avatarColor: 'avatar-orange',
+            submittedAt: new Date(Date.now() - 259200000).toISOString(),
+        },
+        {
+            id: 'demo-4',
+            ngoName: 'Wildlife Sanctuary',
+            title: 'Protect Endangered Species',
+            description: 'Our sanctuary is working to preserve the habitats of endangered animals. Support us in protecting these magnificent creatures for future generations.',
+            raisedAmount: 8900,
+            goalAmount: 15000,
+            upvotes: 187,
+            avatarColor: 'avatar-purple',
+            submittedAt: new Date(Date.now() - 345600000).toISOString(),
+        },
+        {
+            id: 'demo-5',
+            ngoName: 'Healthcare Initiative',
+            title: 'Free Medical Camp in Slums',
+            description: 'We are organizing a comprehensive medical camp to provide free healthcare checkups and medicines to underprivileged communities.',
+            raisedAmount: 22300,
+            goalAmount: 30000,
+            upvotes: 445,
+            avatarColor: 'avatar-red',
+            submittedAt: new Date(Date.now() - 432000000).toISOString(),
+        },
+    ].map((post) => ({
+        ...post,
+        profileUrl: `/ngo/profile/${encodeURIComponent(post.ngoName)}`,
+        detailUrl: `/post/${post.id}`,
+    }));
+}
+
+function buildPostDetailViewModel(post, options = {}) {
+    const title = String(options.title || post.title || 'Community update').trim() || 'Community update';
+    const body = String(options.body || post.body || post.description || 'No details available yet.').trim() || 'No details available yet.';
+    const imageUrl = options.imageUrl || post.imageUrl || null;
+    const authorName = String(options.authorName || post.authorName || post.ngoName || 'Community member').trim() || 'Community member';
+    const authorSubtitle = String(options.authorSubtitle || post.authorUsername || '').trim();
+    const publishedAt = options.publishedAt || post.submittedAt || null;
+    const goalAmount = Number(options.goalAmount ?? post.goalAmount ?? post.fundRaiseGoal ?? 0) || 0;
+    const raisedAmount = Number(options.raisedAmount ?? post.raisedAmount ?? 0) || 0;
+    const progressPercent = goalAmount > 0 ? Math.min((raisedAmount / goalAmount) * 100, 100) : 0;
+    const backUrl = String(options.backUrl || '/search').trim() || '/search';
+    const tags = Array.isArray(options.tags) ? options.tags : Array.isArray(post.tags) ? post.tags : [];
+
+    return {
+        postTitle: title,
+        postBody: body,
+        postImageUrl: imageUrl,
+        postImageAlt: title,
+        postAuthorName: authorName,
+        postAuthorSubtitle: authorSubtitle || (options.isDemoPost ? 'Featured NGO update' : 'Community update'),
+        postAuthorUrl: options.authorUrl || post.profileUrl || null,
+        postPublishedLabel: publishedAt ? formatDateTime(publishedAt) : 'Recently',
+        postBackUrl: backUrl,
+        postIsFundraiser: goalAmount > 0,
+        postGoalLabel: goalAmount > 0 ? formatDollarAmount(goalAmount) : null,
+        postRaisedLabel: raisedAmount > 0 ? formatDollarAmount(raisedAmount) : null,
+        postProgressPercent: progressPercent,
+        postTags: tags.slice(0, 6),
+        postTypeLabel: options.postTypeLabel || (goalAmount > 0 ? 'Fundraiser' : 'Post'),
+        postNotFound: Boolean(options.postNotFound),
+    };
+}
+
 function sanitizeNgoRecord(ngo) {
     if (!ngo) {
         return ngo;
@@ -965,14 +1190,17 @@ function sanitizeNgoRecord(ngo) {
 }
 
 async function renderHomePage(req, res) {
-    const [loggedInNgo, loggedInUser, homeFeedPosts, ngoAccounts] = await Promise.all([
+    const [loggedInNgo, loggedInUser, homeFeedPosts, allFeedPosts, ngoAccounts, singleUsers] = await Promise.all([
         safeGetLoggedInNgo(req),
         safeGetLoggedInUser(req),
         safeListRecentSingleUserFeedPosts(12),
+        safeListAllSingleUserFeedPosts(),
         safeListNgoAccounts(),
+        safeListSingleUsersForSearch(),
     ]);
 
     const popularNgoProfiles = buildPopularNgoFeedProfiles(ngoAccounts);
+    const demoPosts = buildHomeDemoPosts();
 
     return res.render('home', {
         loggedInNgo: loggedInNgo ? sanitizeNgoRecord(loggedInNgo) : null,
@@ -984,7 +1212,50 @@ async function renderHomePage(req, res) {
         ngoInitials: loggedInNgo ? getNgoInitials(loggedInNgo.orgName) : null,
         userInitials: loggedInUser ? getUserInitials(loggedInUser.name) : null,
         homeFeedPostsJson: serializeForInlineScript(homeFeedPosts),
+        homeAllFeedPostsJson: serializeForInlineScript(allFeedPosts),
+        homeNgoAccountsJson: serializeForInlineScript(ngoAccounts.map(sanitizeNgoRecord)),
+        homeSingleUsersJson: serializeForInlineScript(singleUsers),
+        homeDemoPostsJson: serializeForInlineScript(demoPosts),
         homePopularNgoProfilesJson: serializeForInlineScript(popularNgoProfiles),
+        pageMode: 'home',
+        searchQuery: '',
+        searchSelected: '',
+    });
+}
+
+async function renderSearchPage(req, res) {
+    const searchQuery = String(req.query.q || req.query.query || '').trim();
+    const searchSelected = String(req.query.selected || '').trim();
+    const [loggedInNgo, loggedInUser, homeFeedPosts, allFeedPosts, ngoAccounts, singleUsers] = await Promise.all([
+        safeGetLoggedInNgo(req),
+        safeGetLoggedInUser(req),
+        safeListRecentSingleUserFeedPosts(12),
+        safeListAllSingleUserFeedPosts(),
+        safeListNgoAccounts(),
+        safeListSingleUsersForSearch(),
+    ]);
+
+    const popularNgoProfiles = buildPopularNgoFeedProfiles(ngoAccounts);
+    const demoPosts = buildHomeDemoPosts();
+
+    return res.render('home', {
+        loggedInNgo: loggedInNgo ? sanitizeNgoRecord(loggedInNgo) : null,
+        loggedInUser: loggedInUser ? {
+            id: loggedInUser.id,
+            name: loggedInUser.name,
+            profilePictureUrl: loggedInUser.profilePictureUrl || null,
+        } : null,
+        ngoInitials: loggedInNgo ? getNgoInitials(loggedInNgo.orgName) : null,
+        userInitials: loggedInUser ? getUserInitials(loggedInUser.name) : null,
+        homeFeedPostsJson: serializeForInlineScript(homeFeedPosts),
+        homeAllFeedPostsJson: serializeForInlineScript(allFeedPosts),
+        homeNgoAccountsJson: serializeForInlineScript(ngoAccounts.map(sanitizeNgoRecord)),
+        homeSingleUsersJson: serializeForInlineScript(singleUsers),
+        homeDemoPostsJson: serializeForInlineScript(demoPosts),
+        homePopularNgoProfilesJson: serializeForInlineScript(popularNgoProfiles),
+        pageMode: 'search',
+        searchQuery,
+        searchSelected,
     });
 }
 
@@ -1006,6 +1277,88 @@ async function renderPublicNgoProfilePage(req, res) {
     return res.render('ngo-profile', buildPublicNgoProfileViewModel(matchedNgo ? sanitizeNgoRecord(matchedNgo) : null, requestedName));
 }
 
+async function renderPostDetailPage(req, res) {
+    const postRef = String(req.params.postRef || '').trim();
+
+    if (!postRef) {
+        return res.status(404).render('post-detail', buildPostDetailViewModel({ postNotFound: true }, {
+            postNotFound: true,
+            backUrl: '/search',
+            postTypeLabel: 'Post',
+        }));
+    }
+
+    if (postRef.startsWith('demo-')) {
+        const demoPost = buildHomeDemoPosts().find((post) => post.id === postRef) || null;
+
+        if (!demoPost) {
+            return res.status(404).render('post-detail', buildPostDetailViewModel({ postNotFound: true }, {
+                postNotFound: true,
+                backUrl: '/search',
+                postTypeLabel: 'Post',
+            }));
+        }
+
+        return res.render('post-detail', buildPostDetailViewModel(demoPost, {
+            authorName: demoPost.ngoName,
+            authorSubtitle: 'Featured NGO update',
+            authorUrl: demoPost.profileUrl,
+            body: demoPost.description,
+            title: demoPost.title,
+            imageUrl: demoPost.imageUrl || null,
+            raisedAmount: demoPost.raisedAmount,
+            goalAmount: demoPost.goalAmount,
+            publishedAt: demoPost.submittedAt,
+            backUrl: '/search',
+            isDemoPost: true,
+            postTypeLabel: 'Featured post',
+            tags: demoPost.tags || [],
+        }));
+    }
+
+    if (!shouldUseDatabase) {
+        return res.status(404).render('post-detail', buildPostDetailViewModel({ postNotFound: true }, {
+            postNotFound: true,
+            backUrl: '/search',
+            postTypeLabel: 'Post',
+        }));
+    }
+
+    const postId = Number(postRef);
+
+    if (!Number.isInteger(postId) || postId <= 0) {
+        return res.status(404).render('post-detail', buildPostDetailViewModel({ postNotFound: true }, {
+            postNotFound: true,
+            backUrl: '/search',
+            postTypeLabel: 'Post',
+        }));
+    }
+
+    const post = await madadsetuDb.getSingleUserFeedPostById(postId);
+
+    if (!post) {
+        return res.status(404).render('post-detail', buildPostDetailViewModel({ postNotFound: true }, {
+            postNotFound: true,
+            backUrl: '/search',
+            postTypeLabel: 'Post',
+        }));
+    }
+
+    return res.render('post-detail', buildPostDetailViewModel(post, {
+        authorName: post.authorName || post.authorUsername || 'Community member',
+        authorSubtitle: post.authorUsername ? `@${post.authorUsername}` : 'Community update',
+        body: post.body,
+        title: post.title,
+        imageUrl: post.imageUrl || null,
+        raisedAmount: post.raisedAmount,
+        goalAmount: post.fundRaiseGoal,
+        publishedAt: post.submittedAt,
+        backUrl: '/search',
+        postTypeLabel: post.fundRaiseGoal ? 'Fundraiser' : 'Community post',
+        tags: [],
+    }));
+}
+
 async function renderUserProfilePage(req, res) {
     const user = await safeGetLoggedInUser(req);
 
@@ -1016,6 +1369,23 @@ async function renderUserProfilePage(req, res) {
     const posts = await safeListSingleUserPosts(user.id);
 
     return res.render('profile-page', buildUserProfileViewModel(user, posts));
+}
+
+async function renderOtherUserProfilePage(req, res, username) {
+    try {
+        const user = await madadsetuDb.getSingleUserByUsername(username);
+
+        if (!user) {
+            return res.status(404).render('404', { message: 'User not found' });
+        }
+
+        const posts = await safeListSingleUserPosts(user.id);
+
+        return res.render('profile-page', buildUserProfileViewModel(user, posts));
+    } catch (error) {
+        console.error('Error rendering user profile:', error);
+        return res.status(500).render('500', { message: 'Error loading profile' });
+    }
 }
 
 function handleProfilePictureUpload(req, res, next) {
@@ -1108,6 +1478,10 @@ app.get('/', async (req, res) => {
     await renderHomePage(req, res);
 });
 
+app.get('/search', async (req, res) => {
+    await renderSearchPage(req, res);
+});
+
 app.get('/home', async (req, res) => {
     await renderHomePage(req, res);
 });
@@ -1118,6 +1492,10 @@ app.get('/profile', async (req, res) => {
 
 app.get('/user/profile', async (req, res) => {
     await renderUserProfilePage(req, res);
+});
+
+app.get('/user/profile/:username', async (req, res) => {
+    await renderOtherUserProfilePage(req, res, req.params.username);
 });
 
 app.get('/dashboard', async (req, res) => {
@@ -1132,8 +1510,30 @@ app.get('/dashboard/get-started', (req, res) => {
     res.render('get-started');
 });
 
+app.get('/about', async (req, res) => {
+    const [loggedInNgo, loggedInUser] = await Promise.all([
+        safeGetLoggedInNgo(req),
+        safeGetLoggedInUser(req),
+    ]);
+
+    return res.render('about', {
+        loggedInNgo: loggedInNgo ? sanitizeNgoRecord(loggedInNgo) : null,
+        loggedInUser: loggedInUser ? {
+            id: loggedInUser.id,
+            name: loggedInUser.name,
+            profilePictureUrl: loggedInUser.profilePictureUrl || null,
+        } : null,
+        ngoInitials: loggedInNgo ? getNgoInitials(loggedInNgo.orgName) : null,
+        userInitials: loggedInUser ? getUserInitials(loggedInUser.name) : null,
+    });
+});
+
 app.get('/ngo/profile', async (req, res) => {
     await renderNgoProfilePage(req, res);
+});
+
+app.get('/post/:postRef', async (req, res) => {
+    await renderPostDetailPage(req, res);
 });
 
 app.get('/ngo/profile/:ngoName', async (req, res) => {
@@ -1253,6 +1653,39 @@ app.get('/ngo/data', async (req, res) => {
         count: records.length,
         records: records.map(sanitizeNgoRecord),
     });
+});
+
+app.get('/category/:categoryKey', async (req, res) => {
+    try {
+        const categoryKey = String(req.params.categoryKey || '').trim();
+        console.log('📌 Category request:', categoryKey);
+        
+        if (!categoryKey) {
+            return res.status(400).json({ error: 'Category key is required' });
+        }
+
+        // Get NGOs filtered by category
+        const allNgos = await madadsetuDb.listNgoAccountsByCategory(categoryKey);
+        console.log('📌 Total NGOs for category', categoryKey, ':', allNgos?.length || 0);
+
+        const sanitizedNgos = Array.isArray(allNgos) 
+            ? allNgos.map(sanitizeNgoRecord) 
+            : [];
+
+        const allFeedPosts = await safeListAllSingleUserFeedPosts();
+
+        const response = {
+            category: categoryKey,
+            ngoAccounts: sanitizedNgos,
+            allFeedPosts: Array.isArray(allFeedPosts) ? allFeedPosts : [],
+        };
+
+        console.log('📌 Returning', sanitizedNgos.length, 'NGOs for category', categoryKey);
+        return res.json(response);
+    } catch (error) {
+        console.error('❌ Error fetching category data:', error.message);
+        return res.status(500).json({ error: 'Failed to fetch category data', message: error.message });
+    }
 });
 
 app.get('/ngo/login', (req, res) => {

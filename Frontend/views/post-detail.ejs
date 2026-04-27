@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        <%= postNotFound ? 'Post not found | MadadSetu' : `${postTitle} | MadadSetu` %>
+    </title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/post-detail.css">
+</head>
+<body>
+    <main class="post-detail-page">
+        <section class="post-detail-shell <%= postNotFound ? 'post-detail-shell-empty' : '' %>">
+            <div class="post-detail-topbar">
+                <a class="post-detail-back" href="<%= postBackUrl || '/search' %>">Back to search</a>
+                <span class="post-detail-badge"><%= postTypeLabel || 'Post' %></span>
+            </div>
+
+            <% if (postNotFound) { %>
+                <div class="post-detail-empty">
+                    <div class="post-detail-empty-art" aria-hidden="true">↗</div>
+                    <h1>Post not found</h1>
+                    <p>The post you opened is no longer available.</p>
+                    <div class="post-detail-actions">
+                        <a class="post-detail-button post-detail-button-primary" href="/search">Return to search</a>
+                        <a class="post-detail-button post-detail-button-secondary" href="/">Go home</a>
+                    </div>
+                </div>
+            <% } else { %>
+                <header class="post-detail-header">
+                    <div class="post-detail-author-avatar" aria-hidden="true"><%= postAuthorName.slice(0, 2).toUpperCase() %></div>
+                    <div class="post-detail-author-copy">
+                        <span class="post-detail-author-name"><%= postAuthorName %></span>
+                        <span class="post-detail-author-subtitle"><%= postAuthorSubtitle %></span>
+                    </div>
+                    <div class="post-detail-meta">
+                        <span class="post-detail-meta-label">Published</span>
+                        <strong class="post-detail-meta-value"><%= postPublishedLabel %></strong>
+                    </div>
+                </header>
+
+                <div class="post-detail-content">
+                    <h1 class="post-detail-title"><%= postTitle %></h1>
+                    <p class="post-detail-story"><%= postBody %></p>
+
+                    <% if (postImageUrl) { %>
+                        <figure class="post-detail-media">
+                            <img src="<%= postImageUrl %>" alt="<%= postImageAlt || postTitle %>">
+                        </figure>
+                    <% } %>
+
+                    <% if (postIsFundraiser) { %>
+                        <section class="post-detail-progress-card">
+                            <div class="post-detail-progress-topline">
+                                <span class="post-detail-progress-label">Fundraiser progress</span>
+                                <span class="post-detail-progress-value"><%= postRaisedLabel %> raised</span>
+                            </div>
+                            <div class="post-detail-progress-bar" role="img" aria-label="<%= postProgressPercent.toFixed(0) %>% funded">
+                                <span class="post-detail-progress-fill" style="width: <%= postProgressPercent %>%;"></span>
+                            </div>
+                            <div class="post-detail-progress-meta">
+                                <span>Goal: <%= postGoalLabel %></span>
+                                <span><%= postProgressPercent.toFixed(0) %>% complete</span>
+                            </div>
+                        </section>
+                    <% } %>
+
+                    <% if (postTags && postTags.length) { %>
+                        <div class="post-detail-tags">
+                            <% postTags.forEach((tag) => { %>
+                                <span class="post-detail-tag"><%= tag %></span>
+                            <% }) %>
+                        </div>
+                    <% } %>
+
+                    <div class="post-detail-actions">
+                        <% if (postAuthorUrl) { %>
+                            <a class="post-detail-button post-detail-button-secondary" href="<%= postAuthorUrl %>">Open profile</a>
+                        <% } %>
+                        <a class="post-detail-button post-detail-button-primary" href="<%= postBackUrl || '/search' %>">Back to search</a>
+                    </div>
+                </div>
+            <% } %>
+        </section>
+    </main>
+</body>
+</html>

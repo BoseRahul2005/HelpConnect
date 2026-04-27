@@ -3,28 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MadadSetu - NGO Platform</title>
+    <%
+        const safePageMode = typeof pageMode !== 'undefined' ? pageMode : 'home';
+        const safeSearchQuery = typeof searchQuery !== 'undefined' ? searchQuery : '';
+        const safeSearchSelected = typeof searchSelected !== 'undefined' ? searchSelected : '';
+    %>
+    <title>
+        <%= safePageMode === 'search' && safeSearchQuery
+            ? `Search results for "${safeSearchQuery}" | MadadSetu`
+            : 'MadadSetu - NGO Platform' %>
+    </title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/home.css">
 </head>
-<body>
+<body class="<%= safePageMode === 'search' ? 'search-mode' : 'home-mode' %>">
     <%
-        const profileButton = loggedInNgo
+        const safeLoggedInNgo = typeof loggedInNgo !== 'undefined' ? loggedInNgo : null;
+        const safeLoggedInUser = typeof loggedInUser !== 'undefined' ? loggedInUser : null;
+
+        const profileButton = safeLoggedInNgo
             ? {
                 href: '/ngo/profile',
-                label: `Open NGO profile for ${loggedInNgo.orgName}`,
-                title: loggedInNgo.orgName,
+                label: `Open NGO profile for ${safeLoggedInNgo.orgName}`,
+                title: safeLoggedInNgo.orgName,
                 text: ngoInitials,
             }
-            : loggedInUser
+            : safeLoggedInUser
                 ? {
                     href: '/profile',
-                    label: `Open profile for ${loggedInUser.name}`,
-                    title: loggedInUser.name,
+                    label: `Open profile for ${safeLoggedInUser.name}`,
+                    title: safeLoggedInUser.name,
                     text: userInitials,
-                    pictureUrl: loggedInUser.profilePictureUrl,
+                    pictureUrl: safeLoggedInUser.profilePictureUrl,
                 }
                 : null;
     %>
@@ -32,13 +44,13 @@
     <nav class="navbar">
         <div class="nav-container">
             <!-- Logo -->
-            <div class="nav-logo">
+            <a class="nav-logo" href="/" aria-label="Go to home">
                 <svg class="logo-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M12 2C6.48 2 2 6.48 2 12C2 16.42 5.04 20.07 9 21.5C9 21.5 10 19.5 12 19.5C14 19.5 15 21.5 15 21.5C18.96 20.07 22 16.42 22 12C22 6.48 17.52 2 12 2Z" fill="#2E7D32"/>
                     <path d="M12 5C13.66 5 15 6.34 15 8C15 9.66 13.66 11 12 11C10.34 11 9 9.66 9 8C9 6.34 10.34 5 12 5Z" fill="white"/>
                 </svg>
                 <span class="logo-text">MadadSetu</span>
-            </div>
+            </a>
 
             <!-- Search Bar (Hidden on mobile) -->
             <div class="nav-search">
@@ -51,7 +63,11 @@
                     class="search-input" 
                     placeholder="Search NGOs, causes, or posts"
                     aria-label="Search NGOs, causes, or posts"
+                    autocomplete="off"
+                    spellcheck="false"
+                    inputmode="search"
                 >
+                <div class="search-dropdown" data-search-dropdown="desktop" aria-hidden="true"></div>
             </div>
 
             <!-- Right Menu -->
@@ -107,7 +123,11 @@
                     class="search-input" 
                     placeholder="Search NGOs, causes, or posts"
                     aria-label="Search NGOs, causes, or posts"
+                    autocomplete="off"
+                    spellcheck="false"
+                    inputmode="search"
                 >
+                <div class="search-dropdown" data-search-dropdown="mobile" aria-hidden="true"></div>
             </div>
             <div class="mobile-menu-content">
                 <button class="nav-icon-btn" aria-label="Notifications">
@@ -162,7 +182,7 @@
             <h3 class="sidebar-section-title">Categories</h3>
             <nav class="sidebar-nav">
                 <!-- Education -->
-                <a href="#" class="sidebar-link">
+                <a href="#" class="sidebar-link" data-category="education">
                     <svg class="sidebar-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
                         <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
@@ -171,7 +191,7 @@
                 </a>
 
                 <!-- Healthcare -->
-                <a href="#" class="sidebar-link">
+                <a href="#" class="sidebar-link" data-category="healthcare">
                     <svg class="sidebar-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
                     </svg>
@@ -179,7 +199,7 @@
                 </a>
 
                 <!-- Disaster Relief -->
-                <a href="#" class="sidebar-link">
+                <a href="#" class="sidebar-link" data-category="disaster-relief">
                     <svg class="sidebar-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="10"></circle>
                         <line x1="2" y1="12" x2="22" y2="12"></line>
@@ -189,7 +209,7 @@
                 </a>
 
                 <!-- Animal Welfare -->
-                <a href="#" class="sidebar-link">
+                <a href="#" class="sidebar-link" data-category="animal-welfare">
                     <svg class="sidebar-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="6" cy="6" r="1.5" fill="currentColor"></circle>
                         <circle cx="18" cy="6" r="1.5" fill="currentColor"></circle>
@@ -207,7 +227,7 @@
         <div class="sidebar-section">
             <nav class="sidebar-nav">
                 <!-- About -->
-                <a href="#" class="sidebar-link">
+                <a href="/about" class="sidebar-link">
                     <svg class="sidebar-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="10"></circle>
                         <line x1="12" y1="16" x2="12" y2="12"></line>
@@ -296,9 +316,42 @@
         </aside>
     </div>
 
+    <script id="home-bootstrap-data" type="application/json"><%- JSON.stringify({
+        pageMode: safePageMode,
+        searchQuery: safeSearchQuery,
+        searchSelected: safeSearchSelected,
+        homeFeedPosts: typeof homeFeedPostsJson !== 'undefined'
+            ? (typeof homeFeedPostsJson === 'string' ? JSON.parse(homeFeedPostsJson) : homeFeedPostsJson)
+            : [],
+        homeAllFeedPosts: typeof homeAllFeedPostsJson !== 'undefined'
+            ? (typeof homeAllFeedPostsJson === 'string' ? JSON.parse(homeAllFeedPostsJson) : homeAllFeedPostsJson)
+            : [],
+        homeNgoAccounts: typeof homeNgoAccountsJson !== 'undefined'
+            ? (typeof homeNgoAccountsJson === 'string' ? JSON.parse(homeNgoAccountsJson) : homeNgoAccountsJson)
+            : [],
+        homeSingleUsers: typeof homeSingleUsersJson !== 'undefined'
+            ? (typeof homeSingleUsersJson === 'string' ? JSON.parse(homeSingleUsersJson) : homeSingleUsersJson)
+            : [],
+        homeDemoPosts: typeof homeDemoPostsJson !== 'undefined'
+            ? (typeof homeDemoPostsJson === 'string' ? JSON.parse(homeDemoPostsJson) : homeDemoPostsJson)
+            : [],
+        homePopularNgoProfiles: typeof homePopularNgoProfilesJson !== 'undefined'
+            ? (typeof homePopularNgoProfilesJson === 'string' ? JSON.parse(homePopularNgoProfilesJson) : homePopularNgoProfilesJson)
+            : [],
+    }) %></script>
     <script>
-        window.__HOME_FEED_POSTS__ = <%- homeFeedPostsJson %>;
-        window.__HOME_POPULAR_NGO_PROFILES__ = <%- homePopularNgoProfilesJson %>;
+        const homeBootstrapElement = document.getElementById('home-bootstrap-data');
+        const homeBootstrap = homeBootstrapElement ? JSON.parse(homeBootstrapElement.textContent || '{}') : {};
+
+        window.__PAGE_MODE__ = homeBootstrap.pageMode || 'home';
+        window.__SEARCH_QUERY__ = homeBootstrap.searchQuery || '';
+        window.__SEARCH_SELECTED__ = homeBootstrap.searchSelected || '';
+        window.__HOME_FEED_POSTS__ = Array.isArray(homeBootstrap.homeFeedPosts) ? homeBootstrap.homeFeedPosts : [];
+        window.__HOME_ALL_FEED_POSTS__ = Array.isArray(homeBootstrap.homeAllFeedPosts) ? homeBootstrap.homeAllFeedPosts : [];
+        window.__HOME_NGO_ACCOUNTS__ = Array.isArray(homeBootstrap.homeNgoAccounts) ? homeBootstrap.homeNgoAccounts : [];
+        window.__HOME_SINGLE_USERS__ = Array.isArray(homeBootstrap.homeSingleUsers) ? homeBootstrap.homeSingleUsers : [];
+        window.__HOME_DEMO_POSTS__ = Array.isArray(homeBootstrap.homeDemoPosts) ? homeBootstrap.homeDemoPosts : [];
+        window.__HOME_POPULAR_NGO_PROFILES__ = Array.isArray(homeBootstrap.homePopularNgoProfiles) ? homeBootstrap.homePopularNgoProfiles : [];
     </script>
     <script src="/home.js"></script>
 </body>

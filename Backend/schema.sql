@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS ngo_users (
 	email VARCHAR(255) NOT NULL,
 	phone VARCHAR(25) NOT NULL,
 	org_type VARCHAR(50) NOT NULL,
+	category VARCHAR(50) DEFAULT 'community-development',
 	website VARCHAR(255) DEFAULT NULL,
 	founded_on DATE DEFAULT NULL,
 	password_hash VARCHAR(255) NOT NULL,
@@ -27,7 +28,8 @@ CREATE TABLE IF NOT EXISTS ngo_users (
 	last_login_at TIMESTAMP NULL DEFAULT NULL,
 	PRIMARY KEY (id),
 	UNIQUE KEY unique_ngo_email (email),
-	UNIQUE KEY unique_ngo_phone (phone)
+	UNIQUE KEY unique_ngo_phone (phone),
+	KEY idx_ngo_category (category)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS single_users (
