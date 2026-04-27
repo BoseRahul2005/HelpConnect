@@ -59,10 +59,10 @@ body {
     color: var(--primary-green);
 }
 
-.logo-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.logo-img img {
+    width: 2rem;
+    height: 2rem;
+    margin-top: 6px;
 }
 
 .logo-text {
@@ -108,6 +108,39 @@ body {
 .search-input::placeholder {
     color: var(--text-light);
 }
+
+.search-clear-btn {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    color: var(--text-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, color 0.2s ease;
+}
+
+.search-clear-btn:hover {
+    color: var(--text-dark);
+}
+
+.nav-search.has-value .search-clear-btn {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.mobile-search.has-value .search-clear-btn {
+    opacity: 1;
+    pointer-events: auto;
+}
+
 
 .search-dropdown {
     position: absolute;
@@ -877,7 +910,7 @@ body {
 }
 
 .sidebar-section {
-    padding: 0 16px;
+    padding: 21px 16px;
     padding-bottom: 24px;
     border-bottom: 1px solid var(--border-gray);
 }
@@ -891,7 +924,7 @@ body {
 }
 
 .sidebar-section-title {
-    font-size: 11px;
+    font-size: 0.9rem;
     font-weight: 600;
     letter-spacing: 0.5px;
     color: #9CA3AF;
@@ -1353,6 +1386,7 @@ body.search-mode .posts-feed {
 }
 
 .post-more-btn {
+    font-size: 1.2rem;
     background: none;
     border: none;
     cursor: pointer;

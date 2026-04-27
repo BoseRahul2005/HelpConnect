@@ -1485,6 +1485,35 @@ document.addEventListener('DOMContentLoaded', function() {
                     openSearchFromInput(this.value, searchState.selected, false);
                 }
             });
+
+            // Toggle has-value on parent search container to show/hide clear button
+            const searchContainer = inputNode.closest('.nav-search, .mobile-search');
+            if (searchContainer) {
+                function updateHasValue() {
+                    searchContainer.classList.toggle('has-value', inputNode.value.length > 0);
+                }
+
+                inputNode.addEventListener('input', updateHasValue);
+
+                // Handle clear button click
+                const clearBtn = searchContainer.querySelector('.search-clear-btn');
+                if (clearBtn) {
+                    clearBtn.addEventListener('click', function() {
+                        inputNode.value = '';
+                        searchContainer.classList.remove('has-value');
+                        syncSearchInputValues('');
+                        searchState.selected = '';
+                        inputNode.focus();
+
+                        if (!isSearchPage) {
+                            hideSearchUI();
+                            setFeedMode(searchState.activeFeedMode || 'posts');
+                        } else {
+                            renderSearchResults('', { selected: '' });
+                        }
+                    });
+                }
+            }
         });
 
         function handleOutsideSearchInteraction(event) {
@@ -1598,12 +1627,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="post-header-left">
                             ${headerLeftMarkup}
                         </div>
-                        <button class="post-more-btn" aria-label="More options">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="5" r="1"></circle>
-                                <circle cx="12" cy="12" r="1"></circle>
-                                <circle cx="12" cy="19" r="1"></circle>
-                            </svg>
+                        <button class="post-more-btn" aria-label="Important">
+                            !!
                         </button>
                     </div>
 
@@ -1684,16 +1709,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     </div>
 
-                    <div class="post-body ngo-profile-body">
-                        <div class="ngo-profile-rank-chip">Rank ${rankLabel}</div>
-                        <h3 class="post-title">${escapeHtml(profile.highlightTitle)}</h3>
-                        <p class="post-description">${escapeHtml(profile.highlightSummary)}</p>
-                        <div class="ngo-profile-stats">
-                            <span class="ngo-profile-stat">${postCountLabel}</span>
-                            <span class="ngo-profile-stat">${followerLabel}</span>
-                            ${websiteLabel}
-                        </div>
-                    </div>
+                    
                 </article>
             `;
         }).join('');
@@ -2053,10 +2069,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                         <span class="post-time">NGO Profile</span>
                                     </div>
                                 </div>
-                                <div class="post-content">
-                                    <h3 class="post-title"><a href="${profileUrl}">${ngoName}</a></h3>
-                                    <p class="post-description">${escapeHtml(post.description)}</p>
-                                </div>
+                                
                                 <div class="post-footer">
                                     <a href="${profileUrl}" class="view-ngo-link">View Profile →</a>
                                 </div>
