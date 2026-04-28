@@ -90,6 +90,37 @@ const profilePictureUpload = multer({
     },
 });
 
+const profileCoverUploadDir = path.join(frontendPublicDir, 'uploads', 'profile-covers');
+
+fs.mkdirSync(profileCoverUploadDir, { recursive: true });
+
+const profileCoverUpload = multer({
+    storage: multer.diskStorage({
+        destination: (req, file, callback) => {
+            callback(null, profileCoverUploadDir);
+        },
+        filename: (req, file, callback) => {
+            const fileExtension = path.extname(file.originalname).toLowerCase();
+            const safeBaseName = path.basename(file.originalname, fileExtension)
+                .replace(/[^a-z0-9_-]+/gi, '_')
+                .slice(0, 40) || 'cover';
+            const uniqueSuffix = crypto.randomBytes(8).toString('hex');
+            callback(null, `${Date.now()}-${uniqueSuffix}-${safeBaseName}${fileExtension}`);
+        },
+    }),
+    limits: {
+        fileSize: 5 * 1024 * 1024,
+    },
+    fileFilter: (req, file, callback) => {
+        if (!allowedProfilePostMimeTypes.has(file.mimetype)) {
+            callback(new Error('Only image files are allowed.'));
+            return;
+        }
+
+        callback(null, true);
+    },
+});
+
 app.use(express.urlencoded({ extended: true }));
 app.set('view engine', 'ejs');
 app.set('views', frontendViewsDir);
@@ -782,8 +813,8 @@ function buildPublicNgoProfileViewModel(ngo, requestedName) {
     return {
         profileDisplayName: displayName,
         profileSubtitle,
-        profileCoverPhotoUrl: artwork.coverPhotoUrl,
-        profileAvatarPhotoUrl: artwork.profilePhotoUrl,
+        profileCoverPhotoUrl: ngo && ngo.coverPictureUrl ? ngo.coverPictureUrl : artwork.coverPhotoUrl,
+        profileAvatarPhotoUrl: ngo && ngo.profilePictureUrl ? ngo.profilePictureUrl : artwork.profilePhotoUrl,
         profileInitials: getNgoInitials(displayName),
         profileLocation,
         profileWebsiteLabel: website ? website.replace(/^https?:\/\//i, '') : fallbackData.website,
@@ -850,6 +881,14 @@ function buildPublicNgoProfileViewModel(ngo, requestedName) {
         profileOrgType: orgType || fallbackData.orgType,
         profileHasLiveRecord: hasRealRecord,
         profileNormalizedFollowers: normalizedFollowers,
+        isOwner: false,
+        profileHandle: getNgoHandle(displayName),
+        profileJoinedLabel: hasRealRecord ? formatNgoJoinedDate(ngo.submittedAt) : fallbackData.foundedLabel,
+        profileCategoryLabel: getNgoTypeLabel(orgType || fallbackData.orgType),
+        profileContactEmail: hasRealRecord ? (ngo.email || '') : `${normalizeNgoLookupKey(displayName)}@example.org`,
+        termsAccepted: hasRealRecord ? Boolean(ngo.termsAccepted) : true,
+        profileLogoutUrl: '/logout',
+        profileDeleteUrl: '/ngo/delete'
     };
 }
 
@@ -961,84 +1000,67 @@ function getProfilePictureUrl(file) {
     return `/uploads/profile-pictures/${file.filename}`;
 }
 
-function buildNgoProfileViewModel(ngo) {
+function buildNgoOwnProfileViewModel(ngo) {
+    const displayName = String(ngo.orgName || 'NGO Profile').trim();
+    const handle = getNgoHandle(displayName);
+    const artwork = buildNgoArtwork(displayName);
+    
     const posts = getNgoCollection(ngo.posts);
-    const comments = getNgoCollection(ngo.comments);
     const donations = getNgoCollection(ngo.donations);
     const followers = getNgoCollection(ngo.followers);
-    const savedItems = getNgoCollection(ngo.savedItems);
-    const upvoted = getNgoCollection(ngo.upvoted);
-    const history = getNgoCollection(ngo.history);
-    const followerCount = followers.length;
-    const donationCount = donations.length;
-
-    const totalRaised = donations.reduce((sum, donation) => {
-        const donationAmount = Number(donation.amount || donation.value || 0);
-        return sum + donationAmount;
-    }, 0);
-
-    const recentHistory = history.length ? history : [{
-        type: 'signup',
-        title: 'Account created',
-        description: `${ngo.orgName} joined MadadSetu`,
-        date: ngo.submittedAt,
-    }];
+    
+    const normalizedPosts = posts.map((post, index) => normalizeNgoPublicPost(post, index)).reverse();
+    const normalizedDonations = donations.map((donation, index) => normalizeNgoPublicDonation(donation, index)).reverse();
+    
+    const totalRaised = donations.reduce((sum, donation) => sum + Number(donation.amount || 0), 0);
+    const fundraisingPosts = normalizedPosts.filter((post) => post.isFundraiser);
+    
+    const website = normalizeWebsiteUrl(ngo.website);
 
     return {
-        ngo,
-        ngoInitials: getNgoInitials(ngo.orgName),
-        ngoHandle: getNgoHandle(ngo.orgName),
-        ngoTypeLabel: getNgoTypeLabel(ngo.orgType),
-        ngoJoinedLabel: formatNgoJoinedDate(ngo.submittedAt),
-        ngoJoinedAt: formatDateTime(ngo.submittedAt),
-        ngoStatusLabel: ngo.termsAccepted ? 'Verified NGO' : 'Pending Verification',
-        ngoContactEmail: ngo.email,
-        ngoContactPhone: ngo.phone,
-        ngoId: ngo.id,
-        campaignCount: posts.length,
-        commentCount: comments.length,
-        donationCount: donations.length,
-        followerCount: followers.length,
-        savedCount: savedItems.length,
-        upvotedCount: upvoted.length,
-        totalRaisedLabel: formatCurrency(totalRaised),
-        recentPosts: posts.slice(0, 4),
-        recentComments: comments.slice(0, 4),
-        recentDonations: donations.slice(0, 4),
-        recentFollowers: followers.slice(0, 4),
-        recentSavedItems: savedItems.slice(0, 4),
-        recentUpvoted: upvoted.slice(0, 4),
-        recentHistory,
-        formatCurrency,
-        profileDisplayName: ngo.orgName,
-        profileSubtitle: ngoHandle,
-        profileAccountType: 'ngo',
+        isOwner: true,
+        profileDisplayName: displayName,
+        profileSubtitle: getNgoTagline(ngo.orgType, displayName),
+        profileHandle: handle,
+        profileAvatarPhotoUrl: ngo.profilePictureUrl || artwork.profilePhotoUrl,
+        profileCoverPhotoUrl: ngo.coverPictureUrl || artwork.coverPhotoUrl,
+        profileInitials: getNgoInitials(displayName),
+        profileLocation: ngo.location || 'India',
+        profileWebsiteUrl: website || '#',
+        profileWebsiteLabel: website ? website.replace(/^https?:\/\//i, '') : 'Add website',
+        profileFoundedLabel: ngo.foundedOn ? `Founded ${new Date(ngo.foundedOn).getFullYear()}` : 'Add founded date',
+        profileJoinedLabel: formatNgoJoinedDate(ngo.submittedAt),
+        profileCategory: ngo.category,
+        profileCategoryLabel: getNgoTypeLabel(ngo.category),
+        profileContactEmail: ngo.email,
+        profileContactPhone: ngo.phone,
+        profileStats: [
+            { label: 'Followers', value: followers.length.toLocaleString() },
+            { label: 'Following', value: '0' },
+            { label: 'Posts', value: posts.length.toLocaleString() },
+            { label: 'Donations', value: donations.length.toLocaleString() },
+            { label: 'Fund Raised', value: formatDollarAmount(totalRaised) }
+        ],
+        profilePosts: normalizedPosts,
+        profileDonations: normalizedDonations,
+        profileFundraisers: fundraisingPosts,
+        profileOverviewPosts: normalizedPosts.slice(0, 3),
+        profileOverviewDonations: normalizedDonations.slice(0, 4),
+        profileAboutItems: [
+            { label: 'Organization Type', value: getNgoTypeLabel(ngo.orgType) },
+            { label: 'Category', value: getNgoTypeLabel(ngo.category) },
+            { label: 'Location', value: ngo.location || 'India' },
+            { label: 'Website', value: website ? website.replace(/^https?:\/\//i, '') : 'None', href: website },
+            { label: 'Email', value: ngo.email },
+            { label: 'Phone', value: ngo.phone },
+            { label: 'Founded', value: ngo.foundedOn ? formatDateTime(ngo.foundedOn) : 'Unknown' },
+            { label: 'Joined', value: formatDateTime(ngo.submittedAt) }
+        ],
+        profileEmptyTitle: 'No posts yet',
+        profileEmptyCopy: ['Share your first update with the community!'],
         profileLogoutUrl: '/logout',
         profileDeleteUrl: '/ngo/delete',
-        profileStats: [
-            {
-                label: 'Followers',
-                value: String(followerCount),
-            },
-            {
-                label: 'Following',
-                value: '0',
-            },
-            {
-                label: 'Donations',
-                value: String(donationCount),
-            },
-            {
-                label: 'Fund Raised',
-                value: formatDollarAmount(totalRaised),
-            },
-        ],
-        profileStatusLabel: 'Showing all content',
-        profileEmptyTitle: "You haven't supported any cause yet",
-        profileEmptyCopy: [
-            "Once you donate or post in a community, it'll show up here.",
-            "You can also adjust what's visible from your settings.",
-        ],
+        termsAccepted: ngo.termsAccepted
     };
 }
 
@@ -1279,7 +1301,7 @@ async function renderNgoProfilePage(req, res) {
         return res.redirect('/ngo/login');
     }
 
-    return res.render('ngo-profile', buildPublicNgoProfileViewModel(ngo, ngo.orgName));
+    return res.render('ngo-profile', buildNgoOwnProfileViewModel(ngo));
 }
 
 async function renderPublicNgoProfilePage(req, res) {
@@ -1590,6 +1612,106 @@ app.post('/profile/picture', handleProfilePictureUpload, async (req, res) => {
     }
 });
 
+app.post('/ngo/profile/picture', handleProfilePictureUpload, async (req, res) => {
+    const ngo = await safeGetLoggedInNgo(req);
+    if (!ngo) return res.status(401).json({ error: 'Please log in again.' });
+    if (!req.file) return res.status(400).json({ error: 'Please choose an image.' });
+
+    const pictureUrl = getProfilePictureUrl(req.file);
+    try {
+        await madadsetuDb.updateNgoProfilePicture(ngo.id, pictureUrl, req.file.originalname);
+        if (ngo.profilePictureUrl) await removeUploadedProfilePicture(ngo.profilePictureUrl);
+        return res.json({ success: true, pictureUrl });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ error: 'Failed to update picture.' });
+    }
+});
+
+function handleProfileCoverUpload(req, res, next) {
+    profileCoverUpload.single('cover')(req, res, (error) => {
+        if (!error) return next();
+        return res.status(400).json({ error: error.message || 'Unable to upload cover.' });
+    });
+}
+
+async function removeUploadedProfileCover(filePath) {
+    if (!filePath) return;
+    const resolvedPath = path.join(frontendPublicDir, filePath.replace(/^\//, ''));
+    try { await fs.promises.unlink(resolvedPath); } catch {}
+}
+
+app.post('/ngo/profile/cover', handleProfileCoverUpload, async (req, res) => {
+    const ngo = await safeGetLoggedInNgo(req);
+    if (!ngo) return res.status(401).json({ error: 'Please log in again.' });
+    if (!req.file) return res.status(400).json({ error: 'Please choose an image.' });
+
+    const coverUrl = `/uploads/profile-covers/${req.file.filename}`;
+    try {
+        await madadsetuDb.updateNgoCoverPicture(ngo.id, coverUrl, req.file.originalname);
+        if (ngo.coverPictureUrl) await removeUploadedProfileCover(ngo.coverPictureUrl);
+        return res.json({ success: true, coverUrl });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ error: 'Failed to update cover.' });
+    }
+});
+
+app.post('/ngo/profile/posts', handleProfilePostUpload, async (req, res) => {
+    const ngo = await safeGetLoggedInNgo(req);
+    if (!ngo) return res.status(401).json({ error: 'Please log in again.' });
+
+    const { title, body } = req.body;
+    const imageUrl = getProfilePostImageUrl(req.file);
+    const fundRaiseGoal = parseFundRaiseGoal(req.body.fundRaiseGoal);
+    
+    const newPost = {
+        id: `ngo-post-${Date.now()}`,
+        title: title || 'Update',
+        body,
+        imageUrl,
+        imageName: req.file ? req.file.originalname : null,
+        isFundraiser: fundRaiseGoal !== null,
+        fundRaiseGoal,
+        submittedAt: new Date().toISOString()
+    };
+
+    try {
+        const posts = getNgoCollection(ngo.posts);
+        posts.push(newPost);
+        await madadsetuDb.updateNgoPosts(ngo.id, posts);
+        return res.status(201).json({ post: normalizeNgoPublicPost(newPost, posts.length - 1) });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ error: 'Failed to create post.' });
+    }
+});
+
+app.delete('/ngo/profile/posts/:postIndex', async (req, res) => {
+    const ngo = await safeGetLoggedInNgo(req);
+    if (!ngo) return res.status(401).json({ error: 'Please log in again.' });
+
+    const index = parseInt(req.params.postIndex);
+    const posts = getNgoCollection(ngo.posts).reverse(); // The UI reverses them to show latest first
+    
+    if (isNaN(index) || index < 0 || index >= posts.length) {
+        return res.status(400).json({ error: 'Invalid post index.' });
+    }
+
+    const postToDelete = posts[index];
+    const originalPosts = getNgoCollection(ngo.posts);
+    const finalPosts = originalPosts.filter(p => p.id !== postToDelete.id);
+
+    try {
+        await madadsetuDb.updateNgoPosts(ngo.id, finalPosts);
+        if (postToDelete.imageUrl) await removeUploadedProfilePostImage(postToDelete.imageUrl);
+        return res.json({ success: true });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ error: 'Failed to delete post.' });
+    }
+});
+
 // NGO Routes
 app.get('/ngo/signup', (req, res) => {
     res.render('ngo-signup', { errorMessage: null });
@@ -1732,12 +1854,12 @@ app.get('/ngo/dashboard', async (req, res) => {
 
 app.get('/ngo/logout', (req, res) => {
     clearNgoAuthCookie(res);
-    return res.redirect('/');
+    return res.redirect('/get-started');
 });
 
 app.get('/logout', (req, res) => {
     clearAllAuthCookies(res);
-    return res.redirect('/');
+    return res.redirect('/get-started');
 });
 
 app.post('/profile/delete', async (req, res) => {

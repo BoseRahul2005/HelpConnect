@@ -10,6 +10,7 @@
     --ngo-muted: #6b7280;
     --ngo-soft: #94a3b8;
     --ngo-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 18px 40px rgba(15, 23, 42, 0.07);
+    --ngo-danger: #ef4444;
 }
 
 * {
@@ -49,7 +50,7 @@ a {
 
 .ngo-cover {
     position: relative;
-    height: 13rem;
+    height: 16rem;
     border-radius: 28px;
     overflow: hidden;
     background: linear-gradient(135deg, rgba(47, 157, 98, 0.24), rgba(29, 123, 74, 0.4));
@@ -66,17 +67,45 @@ a {
 .ngo-cover-overlay {
     position: absolute;
     inset: 0;
-    background: linear-gradient(180deg, rgba(7, 12, 20, 0.02), rgba(7, 12, 20, 0.22));
+    background: linear-gradient(180deg, rgba(7, 12, 20, 0.02), rgba(7, 12, 20, 0.4));
+}
+
+.ngo-cover-edit-button {
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 0;
+    padding: 8px 16px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transition: all 0.2s;
+}
+
+.ngo-cover-edit-button:hover {
+    background: #fff;
+    transform: translateY(-1px);
+}
+
+.ngo-cover-edit-button svg {
+    width: 18px;
+    height: 18px;
 }
 
 .ngo-header-card {
     position: relative;
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;
-    gap: 24px;
+    gap: 28px;
     align-items: end;
-    margin-top: 15px;
-    padding: 0 28px 8px;
+    margin-top: -64px;
+    padding: 0 32px 8px;
 }
 
 .ngo-avatar-wrap {
@@ -93,6 +122,7 @@ a {
     overflow: hidden;
     background: #ffffff;
     box-shadow: 0 18px 34px rgba(15, 23, 42, 0.18);
+    position: relative;
 }
 
 .ngo-avatar-image {
@@ -102,64 +132,105 @@ a {
     object-fit: cover;
 }
 
+.ngo-avatar-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s;
+    border: 0;
+    cursor: pointer;
+}
+
+.ngo-avatar:hover .ngo-avatar-overlay {
+    opacity: 1;
+}
+
+.ngo-avatar-overlay span {
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
 .ngo-header-copy {
     min-width: 0;
-    padding-bottom: 18px;
+    padding-bottom: 8px;
+}
+
+.ngo-name-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .ngo-name {
     margin: 0;
-    font-size: clamp(2rem, 4vw, 2.5rem);
-    line-height: 1.04;
-    letter-spacing: -0.06em;
+    font-size: clamp(2rem, 4vw, 2.8rem);
+    line-height: 1.1;
+    letter-spacing: -0.05em;
     font-weight: 800;
 }
 
+.ngo-verified-badge {
+    background: var(--ngo-primary);
+    color: #fff;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+}
+
+.ngo-verified-badge svg {
+    width: 14px;
+    height: 14px;
+}
+
+.ngo-handle {
+    margin: 4px 0 0;
+    color: var(--ngo-primary-dark);
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
 .ngo-subtitle {
-    margin: 8px 0 0;
+    margin: 12px 0 0;
     color: var(--ngo-muted);
     font-size: 1rem;
-    line-height: 1.5;
-    max-width: 64ch;
+    line-height: 1.6;
+    max-width: 70ch;
 }
 
 .ngo-meta {
     display: flex;
-    gap: 10px;
+    gap: 12px;
     flex-wrap: wrap;
-    margin-top: 16px;
+    margin-top: 20px;
 }
 
 .ngo-meta-pill {
     display: inline-flex;
     flex-direction: column;
     gap: 2px;
-    padding: 10px 12px;
+    padding: 10px 14px;
     border-radius: 14px;
     background: rgba(255, 255, 255, 0.82);
-    border: 1px solid rgba(223, 229, 234, 0.86);
+    border: 1px solid var(--ngo-border-soft);
     color: var(--ngo-text);
-    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
     text-decoration: none;
     min-width: 0;
 }
 
-.ngo-meta-link {
-    color: inherit;
-    transition: transform 0.2s ease, border-color 0.2s ease, color 0.2s ease;
-}
-
-.ngo-meta-link:hover,
-.ngo-meta-link:focus-visible {
-    color: var(--ngo-primary-dark);
-    border-color: rgba(47, 157, 98, 0.32);
-    transform: translateY(-1px);
-    outline: none;
-}
-
 .ngo-meta-label {
-    font-size: 0.74rem;
-    font-weight: 700;
+    font-size: 0.7rem;
+    font-weight: 800;
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--ngo-soft);
@@ -168,128 +239,192 @@ a {
 .ngo-meta-value {
     font-size: 0.95rem;
     font-weight: 700;
-    word-break: break-word;
 }
 
 .ngo-header-actions {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding-bottom: 18px;
+    padding-bottom: 12px;
 }
 
 .ngo-button {
     border: 0;
     border-radius: 999px;
-    padding: 0.92rem 1.25rem;
+    padding: 0.9rem 1.4rem;
     font-weight: 800;
     cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .ngo-button:hover {
     transform: translateY(-1px);
 }
 
-.ngo-button:focus-visible {
-    outline: 2px solid rgba(47, 157, 98, 0.34);
-    outline-offset: 3px;
-}
-
 .ngo-button-primary {
-    background: linear-gradient(135deg, var(--ngo-primary), var(--ngo-primary-dark));
+    background: var(--ngo-primary);
     color: #ffffff;
-    box-shadow: 0 14px 24px rgba(47, 157, 98, 0.24);
+    box-shadow: 0 10px 20px rgba(47, 157, 98, 0.2);
 }
 
-.ngo-button-primary.is-following {
-    background: linear-gradient(135deg, #1d7b4a, #14532d);
+.ngo-button-primary:hover {
+    background: var(--ngo-primary-dark);
 }
 
 .ngo-button-secondary {
     background: #ffffff;
     color: var(--ngo-text);
     border: 1px solid var(--ngo-border);
-    box-shadow: var(--ngo-shadow);
 }
 
+/* Hamburger Menu */
+.ngo-shell-menu {
+    position: relative;
+}
+
+.ngo-menu-button {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    border: 1px solid var(--ngo-border);
+    background: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.ngo-menu-button:hover {
+    background: var(--ngo-surface-soft);
+    border-color: var(--ngo-primary);
+}
+
+.ngo-menu-icon {
+    width: 20px;
+    height: 14px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.ngo-menu-icon span {
+    display: block;
+    width: 100%;
+    height: 2px;
+    background: var(--ngo-text);
+    border-radius: 2px;
+}
+
+.ngo-menu-card {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    width: 200px;
+    background: #fff;
+    border-radius: 16px;
+    border: 1px solid var(--ngo-border);
+    box-shadow: var(--ngo-shadow);
+    padding: 8px;
+    z-index: 100;
+}
+
+.ngo-menu-action {
+    width: 100%;
+    text-align: left;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--ngo-text);
+    transition: all 0.2s;
+}
+
+.ngo-menu-action:hover {
+    background: var(--ngo-surface-soft);
+    color: var(--ngo-primary);
+}
+
+.ngo-menu-action-danger {
+    color: var(--ngo-danger);
+}
+
+.ngo-menu-action-danger:hover {
+    background: #fff1f1;
+    color: var(--ngo-danger);
+}
+
+/* Stats */
 .ngo-stats {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(5, 1fr);
     gap: 14px;
-    margin-top: 6px;
+    margin-top: 24px;
 }
 
 .ngo-stat-card {
     background: var(--ngo-surface);
     border: 1px solid var(--ngo-border);
     border-radius: 18px;
-    padding: 16px 18px;
-    min-height: 77px;
+    padding: 16px;
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    box-shadow: var(--ngo-shadow);
+    gap: 4px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.02);
 }
 
 .ngo-stat-label {
-    color: var(--ngo-muted);
-    font-size: 0.92rem;
-    margin-bottom: 8px;
-    font-weight: 600;
+    color: var(--ngo-soft);
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
 }
 
 .ngo-stat-value {
-    font-size: clamp(1rem, 2vw, 0.6rem);
-    line-height: 1.1;
-    letter-spacing: -0.05em;
+    font-size: 1.2rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
 }
 
+/* Tabs */
 .ngo-tabs {
     display: flex;
-    gap: 10px;
-    overflow-x: auto;
-    margin-top: 24px;
-    padding-bottom: 10px;
+    gap: 12px;
+    margin-top: 32px;
     border-bottom: 1px solid var(--ngo-border);
-    scrollbar-width: none;
-}
-
-.ngo-tabs::-webkit-scrollbar {
-    display: none;
+    padding-bottom: 8px;
 }
 
 .ngo-tab {
-    border: 0;
     background: transparent;
+    border: 0;
+    padding: 10px 20px;
+    font-weight: 700;
     color: var(--ngo-muted);
-    border-radius: 999px;
-    padding: 0.82rem 1.1rem;
-    font-weight: 800;
     cursor: pointer;
-    flex: 0 0 auto;
-    transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    border-radius: 999px;
+    transition: all 0.2s;
 }
 
 .ngo-tab:hover {
-    background: rgba(47, 157, 98, 0.1);
-    color: var(--ngo-primary-dark);
-    transform: translateY(-1px);
+    color: var(--ngo-primary);
+    background: rgba(47, 157, 98, 0.08);
 }
 
 .ngo-tab.active {
-    background: linear-gradient(135deg, var(--ngo-primary), var(--ngo-primary-dark));
-    color: #ffffff;
-    box-shadow: 0 12px 22px rgba(47, 157, 98, 0.2);
+    background: var(--ngo-primary);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(47, 157, 98, 0.2);
 }
 
-.ngo-tab:focus-visible {
-    outline: 2px solid rgba(47, 157, 98, 0.34);
-    outline-offset: 3px;
-}
-
+/* Panels */
 .ngo-panels {
-    margin-top: 18px;
+    margin-top: 24px;
 }
 
 .ngo-panel {
@@ -300,498 +435,478 @@ a {
     display: block;
 }
 
-.ngo-overview-grid,
-.ngo-fundraised-grid,
-.ngo-about-grid {
+.ngo-overview-grid, .ngo-about-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 16px;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
 }
 
 .ngo-card {
-    background: var(--ngo-surface);
+    background: #fff;
     border: 1px solid var(--ngo-border);
-    border-radius: 22px;
-    padding: 18px;
-    box-shadow: var(--ngo-shadow);
+    border-radius: 24px;
+    padding: 24px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.02);
 }
 
 .ngo-card-header {
     display: flex;
-    align-items: flex-start;
     justify-content: space-between;
-    gap: 16px;
-}
-
-.ngo-card-eyebrow {
-    display: inline-flex;
-    align-items: center;
-    font-size: 0.72rem;
-    font-weight: 800;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--ngo-soft);
-    margin-bottom: 6px;
+    align-items: flex-start;
+    margin-bottom: 20px;
 }
 
 .ngo-card-title {
     margin: 0;
-    font-size: 1.2rem;
-    letter-spacing: -0.04em;
-}
-
-.ngo-card-copy {
-    margin: 14px 0 0;
-    color: var(--ngo-muted);
-    line-height: 1.65;
+    font-size: 1.4rem;
+    letter-spacing: -0.03em;
 }
 
 .ngo-pill {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    white-space: nowrap;
-    padding: 0.5rem 0.8rem;
-    border-radius: 999px;
     background: rgba(47, 157, 98, 0.1);
     color: var(--ngo-primary-dark);
-    font-size: 0.84rem;
+    padding: 4px 12px;
+    border-radius: 999px;
     font-weight: 800;
+    font-size: 0.8rem;
 }
 
-.ngo-summary-grid {
-    margin-top: 18px;
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+/* Add Post UI */
+.ngo-add-post-btn {
+    width: 100%;
+    background: #fff;
+    border: 2px dashed var(--ngo-border);
+    border-radius: 20px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     gap: 12px;
+    cursor: pointer;
+    margin-bottom: 24px;
+    transition: all 0.2s;
 }
 
-.ngo-summary-item {
-    padding: 14px 15px;
-    border-radius: 16px;
+.ngo-add-post-btn:hover {
+    border-color: var(--ngo-primary);
     background: var(--ngo-surface-soft);
-    border: 1px solid var(--ngo-border-soft);
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
+    color: var(--ngo-primary);
 }
 
-.ngo-summary-label {
-    color: var(--ngo-muted);
-    font-size: 0.82rem;
-    font-weight: 700;
+.ngo-add-post-btn svg {
+    width: 24px;
+    height: 24px;
 }
 
-.ngo-summary-value {
-    font-size: 1.1rem;
-    letter-spacing: -0.04em;
-}
-
-.ngo-mini-list,
-.ngo-post-list,
-.ngo-donation-list {
-    display: grid;
-    gap: 12px;
-    margin-top: 16px;
-}
-
-.ngo-mini-item,
-.ngo-donation-card,
-.ngo-post-card,
-.ngo-campaign-card {
-    border: 1px solid var(--ngo-border-soft);
-    border-radius: 18px;
-    background: linear-gradient(180deg, #ffffff, #fbfcfb);
-    padding: 15px 16px;
-}
-
-.ngo-mini-item {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 14px;
-}
-
-.ngo-mini-copy {
-    min-width: 0;
-}
-
-.ngo-mini-copy strong,
-.ngo-donation-name,
-.ngo-post-title,
-.ngo-campaign-title {
-    display: block;
+.ngo-add-post-btn span {
     font-weight: 800;
-    letter-spacing: -0.03em;
+    font-size: 1.1rem;
 }
 
-.ngo-mini-copy p,
-.ngo-donation-note,
-.ngo-post-copy,
-.ngo-campaign-copy {
-    margin: 6px 0 0;
-    color: var(--ngo-muted);
-    line-height: 1.6;
+/* Composer */
+.ngo-composer {
+    background: #fff;
+    border: 1px solid var(--ngo-primary);
+    border-radius: 24px;
+    padding: 24px;
+    margin-bottom: 32px;
+    box-shadow: 0 10px 30px rgba(47, 157, 98, 0.1);
 }
 
-.ngo-mini-meta,
-.ngo-post-time {
-    flex: 0 0 auto;
-    color: var(--ngo-soft);
-    font-size: 0.84rem;
-    font-weight: 700;
-}
-
-.ngo-mini-right,
-.ngo-donation-meta {
+.composer-header {
     display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 4px;
-    text-align: right;
-    flex: 0 0 auto;
-}
-
-.ngo-donation-amount {
-    font-size: 1rem;
-    letter-spacing: -0.03em;
-}
-
-.ngo-post-topline,
-.ngo-campaign-header {
-    display: flex;
-    align-items: flex-start;
     justify-content: space-between;
-    gap: 12px;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.composer-header strong {
+    font-size: 1.2rem;
+    letter-spacing: -0.02em;
+}
+
+.composer-close {
+    background: transparent;
+    border: 0;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--ngo-soft);
+}
+
+.composer-form {
+    display: grid;
+    gap: 16px;
+}
+
+.composer-field {
+    width: 100%;
+    padding: 14px 18px;
+    border-radius: 14px;
+    border: 1px solid var(--ngo-border);
+    background: var(--ngo-surface-soft);
+    font: inherit;
+    transition: all 0.2s;
+}
+
+.composer-field:focus {
+    outline: none;
+    border-color: var(--ngo-primary);
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(47, 157, 98, 0.08);
+}
+
+.composer-options {
+    padding: 8px 0;
+}
+
+.composer-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.composer-fundraise-goal {
+    margin-top: 12px;
+}
+
+.composer-fundraise-goal input {
+    width: 200px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--ngo-border);
+}
+
+.composer-tool-btn {
+    background: var(--ngo-surface-soft);
+    border: 1px solid var(--ngo-border);
+    padding: 10px 16px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.composer-tool-btn:hover {
+    background: #fff;
+    border-color: var(--ngo-primary);
+}
+
+.composer-tool-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+.composer-preview {
+    margin-top: 16px;
+    position: relative;
+    width: 120px;
+    height: 120px;
+}
+
+.composer-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 12px;
+}
+
+.preview-remove {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: var(--ngo-danger);
+    color: #fff;
+    border: 0;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.composer-footer {
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* Post Cards */
+.ngo-post-list {
+    display: grid;
+    gap: 24px;
+}
+
+.ngo-post-card {
+    background: #fff;
+    border: 1px solid var(--ngo-border);
+    border-radius: 24px;
+    padding: 24px;
+    transition: transform 0.2s;
+}
+
+.ngo-post-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.04);
+}
+
+.ngo-post-topline {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
 }
 
 .ngo-post-badge {
-    display: inline-flex;
-    align-items: center;
-    width: fit-content;
-    margin-bottom: 10px;
-    padding: 0.35rem 0.7rem;
+    background: rgba(0,0,0,0.05);
+    padding: 4px 12px;
     border-radius: 999px;
-    background: rgba(47, 157, 98, 0.1);
-    color: var(--ngo-primary-dark);
-    font-size: 0.74rem;
     font-weight: 800;
-    letter-spacing: 0.08em;
+    font-size: 0.75rem;
     text-transform: uppercase;
 }
 
 .ngo-post-badge.is-fundraiser {
     background: rgba(37, 99, 235, 0.1);
-    color: #1d4ed8;
+    color: #2563eb;
 }
 
-.ngo-post-title,
-.ngo-campaign-title {
+.ngo-post-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.ngo-post-time {
+    color: var(--ngo-soft);
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.ngo-post-delete {
+    background: transparent;
+    border: 0;
+    color: var(--ngo-soft);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.ngo-post-delete:hover {
+    background: #fff1f1;
+    color: var(--ngo-danger);
+}
+
+.ngo-post-delete svg {
+    width: 18px;
+    height: 18px;
+}
+
+.ngo-post-title {
+    margin: 0 0 12px;
+    font-size: 1.3rem;
+    letter-spacing: -0.02em;
+}
+
+.ngo-post-copy {
     margin: 0;
-    font-size: 1.05rem;
+    color: var(--ngo-muted);
+    line-height: 1.6;
 }
 
 .ngo-post-media {
-    margin-top: 14px;
+    margin-top: 20px;
     border-radius: 16px;
     overflow: hidden;
-    border: 1px solid var(--ngo-border-soft);
-    background: #edf4ef;
 }
 
-.ngo-post-image {
-    display: block;
+.ngo-post-media img {
     width: 100%;
-    max-height: 280px;
+    max-height: 400px;
     object-fit: cover;
+    display: block;
 }
 
 .ngo-progress-section {
-    margin-top: 14px;
+    margin-top: 24px;
 }
 
 .ngo-progress-bar {
     height: 10px;
+    background: var(--ngo-surface-soft);
     border-radius: 999px;
-    background: #ebeff2;
     overflow: hidden;
 }
 
 .ngo-progress-bar span {
     display: block;
     height: 100%;
-    border-radius: inherit;
-    width: calc(var(--ngo-progress, 0) * 1%);
-    background: linear-gradient(135deg, var(--ngo-primary), var(--ngo-primary-dark));
+    background: linear-gradient(90deg, var(--ngo-primary), #22c55e);
+    width: var(--ngo-progress);
 }
 
 .ngo-progress-meta {
     display: flex;
     justify-content: space-between;
-    gap: 12px;
-    margin-top: 8px;
-    color: var(--ngo-muted);
-    font-size: 0.84rem;
-    font-weight: 600;
+    margin-top: 10px;
+    font-weight: 700;
+    font-size: 0.9rem;
 }
 
-.ngo-empty-state {
-    margin-top: 16px;
-    padding: 18px;
-    border-radius: 18px;
-    border: 1px dashed var(--ngo-border);
-    background: #fafcfa;
-}
-
-.ngo-empty-state h3 {
-    margin: 0;
-    font-size: 1rem;
-}
-
-.ngo-empty-state p {
-    margin: 8px 0 0;
-    color: var(--ngo-muted);
-    line-height: 1.6;
-}
-
-.ngo-empty-panel {
-    min-height: 220px;
+/* Modal */
+.ngo-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(4px);
     display: grid;
     place-items: center;
+    z-index: 1000;
+}
+
+.ngo-modal {
+    background: #fff;
+    width: min(400px, 90vw);
+    padding: 32px;
+    border-radius: 28px;
     text-align: center;
 }
 
-.ngo-empty-panel h3 {
-    margin: 0;
+.ngo-modal h3 {
+    margin: 0 0 12px;
+    font-size: 1.5rem;
 }
 
-.ngo-empty-panel p {
-    max-width: 40ch;
+.ngo-modal p {
+    margin: 0 0 24px;
+    color: var(--ngo-muted);
+    line-height: 1.5;
 }
 
-.ngo-donation-card {
+.ngo-modal-actions {
     display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 18px;
+    gap: 12px;
 }
 
-.ngo-fundraised-summary {
-    grid-column: 1 / -1;
+.ngo-modal-btn {
+    flex: 1;
+    padding: 12px;
+    border-radius: 14px;
+    border: 1px solid var(--ngo-border);
+    background: #fff;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.ngo-modal-btn-danger {
+    background: var(--ngo-danger);
+    color: #fff;
+    border: 0;
+}
+
+/* Empty State */
+.ngo-empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--ngo-muted);
+}
+
+.ngo-mini-list {
+    display: grid;
+    gap: 12px;
+}
+
+.ngo-mini-item {
+    background: var(--ngo-surface-soft);
+    padding: 16px;
+    border-radius: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.ngo-mini-copy strong {
+    display: block;
+    margin-bottom: 4px;
+}
+
+.ngo-mini-copy p {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.ngo-mini-meta {
+    font-size: 0.8rem;
+    color: var(--ngo-soft);
 }
 
 .ngo-insight-list {
     display: grid;
-    gap: 12px;
-    margin-top: 16px;
-}
-
-.ngo-insight-item {
-    padding: 14px 15px;
-    border-radius: 16px;
-    background: var(--ngo-surface-soft);
-    border: 1px solid var(--ngo-border-soft);
-}
-
-.ngo-insight-item strong {
-    display: block;
-    margin-bottom: 6px;
-    font-size: 0.96rem;
-}
-
-.ngo-insight-item p {
-    margin: 0;
-    color: var(--ngo-muted);
-    line-height: 1.6;
+    gap: 16px;
 }
 
 .ngo-about-list {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
-    margin-top: 16px;
+    gap: 16px;
 }
 
 .ngo-about-item {
     display: flex;
     flex-direction: column;
     gap: 4px;
-    padding: 14px 15px;
-    border-radius: 16px;
-    background: var(--ngo-surface-soft);
-    border: 1px solid var(--ngo-border-soft);
-    text-decoration: none;
-    color: inherit;
-    transition: transform 0.2s ease, border-color 0.2s ease, color 0.2s ease;
-}
-
-.ngo-about-item:hover,
-.ngo-about-item:focus-visible {
-    transform: translateY(-1px);
-    border-color: rgba(47, 157, 98, 0.28);
-    color: var(--ngo-primary-dark);
-    outline: none;
 }
 
 .ngo-about-label {
-    color: var(--ngo-muted);
-    font-size: 0.82rem;
-    font-weight: 700;
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: var(--ngo-soft);
+    text-transform: uppercase;
 }
 
-.ngo-about-value {
-    font-size: 0.98rem;
-    letter-spacing: -0.03em;
-    word-break: break-word;
+.ngo-link {
+    color: var(--ngo-primary);
+    text-decoration: none;
 }
 
-.ngo-insight-item strong,
-.ngo-about-value,
-.ngo-donation-amount,
-.ngo-summary-value {
-    color: var(--ngo-text);
+.ngo-link:hover {
+    text-decoration: underline;
 }
 
-@media (max-width: 1080px) {
-    .ngo-header-card {
-        grid-template-columns: auto minmax(0, 1fr);
-        grid-template-areas:
-            'avatar copy'
-            'actions actions';
-        align-items: start;
-    }
-
-    .ngo-avatar-wrap {
-        grid-area: avatar;
-    }
-
-    .ngo-header-copy {
-        grid-area: copy;
-        padding-bottom: 0;
-    }
-
-    .ngo-header-actions {
-        grid-area: actions;
-        padding-bottom: 0;
-    }
-
-    .ngo-stats {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .ngo-summary-grid,
-    .ngo-overview-grid,
-    .ngo-about-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .ngo-intro-card,
-    .ngo-fundraised-summary {
-        grid-column: auto;
-    }
+[hidden] {
+    display: none !important;
 }
 
-@media (max-width: 720px) {
-    .ngo-profile-shell {
-        width: min(100% - 24px, 1180px);
-        padding-top: 12px;
-    }
-
-    .ngo-cover {
-        height: 240px;
-        border-radius: 24px;
-    }
-
-    .ngo-header-card {
-        margin-top: -56px;
-        gap: 16px;
-        padding: 0 18px 6px;
-    }
-
-    .ngo-avatar-wrap {
-        width: 116px;
-        height: 116px;
-    }
-
-    .ngo-header-actions {
-        flex-wrap: wrap;
-    }
-
-    .ngo-button {
-        flex: 1 1 140px;
-    }
-
-    .ngo-stats {
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-        margin-top: 14px;
-    }
-
-    .ngo-stat-card {
-        min-height: 84px;
-        padding: 14px 15px;
-    }
-
-    .ngo-card {
-        padding: 16px;
-        border-radius: 20px;
-    }
-
-    .ngo-about-list {
-        grid-template-columns: 1fr;
-    }
-
-    .ngo-mini-item,
-    .ngo-donation-card {
-        flex-direction: column;
-    }
-
-    .ngo-mini-right,
-    .ngo-donation-meta {
-        align-items: flex-start;
-        text-align: left;
-    }
-
-    .ngo-progress-meta {
-        flex-direction: column;
-        gap: 4px;
-    }
-}
-
-@media (max-width: 480px) {
-    .ngo-profile-shell {
-        width: min(100% - 18px, 1180px);
-    }
-
-    .ngo-cover {
-        height: 200px;
-    }
-
+@media (max-width: 900px) {
     .ngo-header-card {
         grid-template-columns: 1fr;
-        margin-top: -44px;
-        padding: 0 12px 4px;
+        place-items: center;
+        text-align: center;
+        margin-top: -80px;
     }
-
-    .ngo-avatar-wrap {
-        width: 96px;
-        height: 96px;
-        margin-bottom: -4px;
+    
+    .ngo-name-row {
+        justify-content: center;
     }
-
-    .ngo-header-actions {
-        padding-bottom: 0;
+    
+    .ngo-meta {
+        justify-content: center;
     }
-
+    
     .ngo-stats {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
+    .ngo-overview-grid, .ngo-about-grid {
         grid-template-columns: 1fr;
     }
+}
 
-    .ngo-tabs {
-        gap: 8px;
-    }
-
-    .ngo-tab {
-        padding: 0.72rem 0.92rem;
+@media (max-width: 600px) {
+    .ngo-stats {
+        grid-template-columns: repeat(2, 1fr);
     }
 }

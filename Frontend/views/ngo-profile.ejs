@@ -11,24 +11,51 @@
     <link rel="stylesheet" href="/ngo-profile.css">
 </head>
 <body>
-    <% const statMap = Object.fromEntries(profileStats.map((stat) => [stat.label, stat.value])); %>
-
-    <main class="ngo-profile-shell" data-ngo-profile-shell data-ngo-display-name="<%= profileDisplayName %>">
+    <main class="ngo-profile-shell" 
+        data-ngo-is-owner="<%= locals.isOwner ? 'true' : 'false' %>"
+        data-ngo-display-name="<%= profileDisplayName %>">
+        
         <section class="ngo-hero">
             <div class="ngo-cover">
-                <img class="ngo-cover-image" src="<%= profileCoverPhotoUrl %>" alt="" aria-hidden="true">
+                <img class="ngo-cover-image" data-ngo-cover-image src="<%= profileCoverPhotoUrl %>" alt="">
                 <div class="ngo-cover-overlay"></div>
+                <% if (locals.isOwner) { %>
+                    <button type="button" class="ngo-cover-edit-button" data-ngo-cover-button aria-label="Change cover photo">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                            <circle cx="12" cy="13" r="4"></circle>
+                        </svg>
+                        <span>Edit Cover</span>
+                    </button>
+                    <input type="file" class="ngo-cover-input" data-ngo-cover-input accept="image/*" hidden>
+                <% } %>
             </div>
 
             <div class="ngo-header-card">
                 <div class="ngo-avatar-wrap">
                     <div class="ngo-avatar">
-                        <img class="ngo-avatar-image" src="<%= profileAvatarPhotoUrl %>" alt="<%= profileDisplayName %> profile photo">
+                        <img class="ngo-avatar-image" data-ngo-avatar-image src="<%= profileAvatarPhotoUrl %>" alt="<%= profileDisplayName %> profile photo">
+                        <% if (locals.isOwner) { %>
+                            <button type="button" class="ngo-avatar-overlay" data-ngo-avatar-button>
+                                <span>Change photo</span>
+                            </button>
+                            <input type="file" class="ngo-avatar-input" data-ngo-avatar-input accept="image/*" hidden>
+                        <% } %>
                     </div>
                 </div>
 
                 <div class="ngo-header-copy">
-                    <h1 class="ngo-name"><%= profileDisplayName %></h1>
+                    <div class="ngo-name-row">
+                        <h1 class="ngo-name"><%= profileDisplayName %></h1>
+                        <% if (locals.termsAccepted) { %>
+                            <span class="ngo-verified-badge" title="Verified NGO">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                            </span>
+                        <% } %>
+                    </div>
+                    <p class="ngo-handle">@<%= profileHandle %></p>
                     <p class="ngo-subtitle"><%= profileSubtitle %></p>
 
                     <div class="ngo-meta">
@@ -48,8 +75,24 @@
                 </div>
 
                 <div class="ngo-header-actions">
-                    <button type="button" class="ngo-button ngo-button-primary" data-ngo-follow-button>Follow</button>
-                    <button type="button" class="ngo-button ngo-button-secondary" data-ngo-share-button>Share</button>
+                    <% if (locals.isOwner) { %>
+                        <div class="ngo-shell-menu" data-ngo-shell-menu>
+                            <button type="button" class="ngo-menu-button" data-ngo-menu-button aria-label="Open account menu">
+                                <span class="ngo-menu-icon">
+                                    <span></span>
+                                    <span></span>
+                                    <span></span>
+                                </span>
+                            </button>
+                            <div class="ngo-menu-card" data-ngo-menu-card hidden>
+                                <button type="button" class="ngo-menu-action" data-ngo-logout-button>Log out</button>
+                                <button type="button" class="ngo-menu-action ngo-menu-action-danger" data-ngo-delete-button>Delete Account</button>
+                            </div>
+                        </div>
+                    <% } else { %>
+                        <button type="button" class="ngo-button ngo-button-primary" data-ngo-follow-button>Follow</button>
+                        <button type="button" class="ngo-button ngo-button-secondary" data-ngo-share-button>Share</button>
+                    <% } %>
                 </div>
             </div>
         </section>
@@ -66,8 +109,6 @@
         <section class="ngo-tabs" role="tablist" aria-label="NGO profile sections">
             <button class="ngo-tab active" type="button" data-ngo-tab="overview">Overview</button>
             <button class="ngo-tab" type="button" data-ngo-tab="posts">Posts</button>
-            <button class="ngo-tab" type="button" data-ngo-tab="donations">Donations</button>
-            <button class="ngo-tab" type="button" data-ngo-tab="fundraised">Fund Raised</button>
             <button class="ngo-tab" type="button" data-ngo-tab="about">About</button>
         </section>
 
@@ -106,45 +147,97 @@
                     <section class="ngo-card">
                         <div class="ngo-card-header">
                             <div>
-                                <span class="ngo-card-eyebrow">Support activity</span>
-                                <h2 class="ngo-card-title">Recent donations</h2>
+                                <span class="ngo-card-eyebrow">Organization</span>
+                                <h2 class="ngo-card-title">Details</h2>
                             </div>
-                            <span class="ngo-pill"><%= profileOverviewDonations.length %></span>
                         </div>
-
-                        <% if (profileOverviewDonations.length) { %>
-                            <div class="ngo-mini-list">
-                                <% profileOverviewDonations.forEach((donation) => { %>
-                                    <article class="ngo-mini-item ngo-mini-donation-item">
-                                        <div class="ngo-mini-copy">
-                                            <strong><%= donation.donorName %></strong>
-                                            <p><%= donation.note || 'Donation received' %></p>
-                                        </div>
-                                        <div class="ngo-mini-right">
-                                            <strong class="ngo-donation-amount"><%= donation.amountLabel %></strong>
-                                            <span class="ngo-mini-meta"><%= donation.submittedAtLabel %></span>
-                                        </div>
-                                    </article>
-                                <% }) %>
-                            </div>
-                        <% } else { %>
-                            <div class="ngo-empty-state">
-                                <h3>No donations yet</h3>
-                                <p>Donations will appear here once supporters contribute to this NGO.</p>
-                            </div>
-                        <% } %>
+                        <div class="ngo-insight-list">
+                            <article class="ngo-insight-item">
+                                <strong>Type</strong>
+                                <p><%= profileCategoryLabel %></p>
+                            </article>
+                            <article class="ngo-insight-item">
+                                <strong>Contact</strong>
+                                <p><%= profileContactEmail %></p>
+                            </article>
+                            <article class="ngo-insight-item">
+                                <strong>Joined</strong>
+                                <p><%= profileJoinedLabel %></p>
+                            </article>
+                        </div>
                     </section>
                 </div>
             </article>
 
             <article class="ngo-panel" data-ngo-panel="posts">
-                <% if (profilePosts.length) { %>
-                    <div class="ngo-post-list">
-                        <% profilePosts.forEach((post) => { %>
-                            <article class="ngo-post-card">
+                <% if (locals.isOwner) { %>
+                    <button type="button" class="ngo-add-post-btn" data-ngo-add-post-trigger>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 5v14M5 12h14"></path>
+                        </svg>
+                        <span>Add New Post</span>
+                    </button>
+
+                    <section class="ngo-composer" data-ngo-composer hidden>
+                        <div class="composer-header">
+                            <strong>Create Post</strong>
+                            <button type="button" class="composer-close" data-ngo-composer-close>×</button>
+                        </div>
+                        <form class="composer-form" data-ngo-composer-form>
+                            <input type="text" name="title" class="composer-field" placeholder="Post Title" required>
+                            <textarea name="body" class="composer-field" placeholder="What's happening?" rows="5" required></textarea>
+                            
+                            <div class="composer-options">
+                                <label class="composer-option">
+                                    <input type="checkbox" data-ngo-fundraiser-toggle>
+                                    <span>Make this a fundraiser</span>
+                                </label>
+                                <div class="composer-fundraise-goal" data-ngo-goal-container hidden>
+                                    <input type="number" name="fundRaiseGoal" placeholder="Goal amount ($)">
+                                </div>
+                            </div>
+
+                            <div class="composer-image-section">
+                                <button type="button" class="composer-tool-btn" data-ngo-image-trigger>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                        <polyline points="21 15 16 10 5 21"></polyline>
+                                    </svg>
+                                    <span>Add Image</span>
+                                </button>
+                                <input type="file" name="image" data-ngo-image-input accept="image/*" hidden>
+                                <div class="composer-preview" data-ngo-image-preview hidden>
+                                    <img src="" alt="Preview">
+                                    <button type="button" class="preview-remove" data-ngo-image-remove>×</button>
+                                </div>
+                            </div>
+
+                            <div class="composer-footer">
+                                <button type="submit" class="ngo-button ngo-button-primary">Post</button>
+                            </div>
+                        </form>
+                    </section>
+                <% } %>
+
+                <div class="ngo-post-list" data-ngo-post-list>
+                    <% if (profilePosts.length) { %>
+                        <% profilePosts.forEach((post, index) => { %>
+                            <article class="ngo-post-card" data-post-index="<%= index %>">
                                 <div class="ngo-post-topline">
-                                    <span class="ngo-post-badge <%= post.isFundraiser ? 'is-fundraiser' : '' %>"><%= post.isFundraiser ? 'Fundraiser' : 'Update' %></span>
-                                    <span class="ngo-post-time"><%= post.submittedAtLabel %></span>
+                                    <span class="ngo-post-badge <%= post.isFundraiser ? 'is-fundraiser' : '' %>">
+                                        <%= post.isFundraiser ? 'Fundraiser' : 'Update' %>
+                                    </span>
+                                    <div class="ngo-post-meta-row">
+                                        <span class="ngo-post-time"><%= post.submittedAtLabel %></span>
+                                        <% if (locals.isOwner) { %>
+                                            <button type="button" class="ngo-post-delete" data-ngo-post-delete-btn data-post-index="<%= index %>" aria-label="Delete post">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                                </svg>
+                                            </button>
+                                        <% } %>
+                                    </div>
                                 </div>
 
                                 <h3 class="ngo-post-title"><%= post.title %></h3>
@@ -152,7 +245,7 @@
 
                                 <% if (post.imageUrl) { %>
                                     <div class="ngo-post-media">
-                                        <img class="ngo-post-image" src="<%= post.imageUrl %>" alt="<%= post.imageName || post.title || 'Post image' %>">
+                                        <img class="ngo-post-image" src="<%= post.imageUrl %>" alt="">
                                     </div>
                                 <% } %>
 
@@ -169,78 +262,13 @@
                                 <% } %>
                             </article>
                         <% }) %>
-                    </div>
-                <% } else { %>
-                    <div class="ngo-empty-state ngo-empty-panel">
-                        <h3><%= profileEmptyTitle %></h3>
-                        <p><%= profileEmptyCopy[1] %></p>
-                    </div>
-                <% } %>
-            </article>
-
-            <article class="ngo-panel" data-ngo-panel="donations">
-                <% if (profileDonations.length) { %>
-                    <div class="ngo-donation-list">
-                        <% profileDonations.forEach((donation) => { %>
-                            <article class="ngo-donation-card">
-                                <div class="ngo-donation-card-copy">
-                                    <strong class="ngo-donation-name"><%= donation.donorName %></strong>
-                                    <p class="ngo-donation-note"><%= donation.note || 'Supporter contribution' %></p>
-                                </div>
-                                <div class="ngo-donation-meta">
-                                    <strong class="ngo-donation-amount"><%= donation.amountLabel %></strong>
-                                    <span class="ngo-mini-meta"><%= donation.submittedAtLabel %></span>
-                                </div>
-                            </article>
-                        <% }) %>
-                    </div>
-                <% } else { %>
-                    <div class="ngo-empty-state ngo-empty-panel">
-                        <h3>No donations yet</h3>
-                        <p>Donation activity will appear here once this NGO receives support.</p>
-                    </div>
-                <% } %>
-            </article>
-
-            <article class="ngo-panel" data-ngo-panel="fundraised">
-                <% if (profileFundraisers.length) { %>
-                    <div class="ngo-fundraised-grid">
-                        <section class="ngo-card ngo-fundraised-summary">
-                            <span class="ngo-card-eyebrow">Fund raised</span>
-                            <h2 class="ngo-card-title"><%= statMap['Fund Raised'] %></h2>
-                            <p class="ngo-card-copy">Collected across <%= profileFundraisers.length %> live campaigns and ongoing drives.</p>
-                        </section>
-
-                        <% profileFundraisers.forEach((campaign) => { %>
-                            <article class="ngo-campaign-card">
-                                <div class="ngo-campaign-header">
-                                    <div>
-                                        <span class="ngo-post-badge is-fundraiser">Fundraiser</span>
-                                        <h3 class="ngo-campaign-title"><%= campaign.title %></h3>
-                                    </div>
-                                    <span class="ngo-post-time"><%= campaign.submittedAtLabel %></span>
-                                </div>
-
-                                <p class="ngo-campaign-copy"><%= campaign.body %></p>
-
-                                <div class="ngo-progress-section">
-                                    <div class="ngo-progress-bar">
-                                        <span style="--ngo-progress: <%= campaign.progressPercent %>"></span>
-                                    </div>
-                                    <div class="ngo-progress-meta">
-                                        <span><%= campaign.raisedAmountLabel %> raised</span>
-                                        <span>Goal: <%= campaign.fundRaiseGoalLabel %></span>
-                                    </div>
-                                </div>
-                            </article>
-                        <% }) %>
-                    </div>
-                <% } else { %>
-                    <div class="ngo-empty-state ngo-empty-panel">
-                        <h3>No campaigns yet</h3>
-                        <p>This NGO has not published a fundraiser campaign yet.</p>
-                    </div>
-                <% } %>
+                    <% } else { %>
+                        <div class="ngo-empty-state ngo-empty-panel">
+                            <h3><%= profileEmptyTitle %></h3>
+                            <p><%= profileEmptyCopy[0] %></p>
+                        </div>
+                    <% } %>
+                </div>
             </article>
 
             <article class="ngo-panel" data-ngo-panel="about">
@@ -252,53 +280,43 @@
                                 <h2 class="ngo-card-title">Organization details</h2>
                             </div>
                         </div>
-
-                        <p class="ngo-card-copy"><%= profileSubtitle %></p>
-
                         <div class="ngo-about-list">
                             <% profileAboutItems.forEach((item) => { %>
-                                <% if (item.href) { %>
-                                    <a class="ngo-about-item" href="<%= item.href %>" target="_blank" rel="noreferrer">
-                                        <span class="ngo-about-label"><%= item.label %></span>
+                                <div class="ngo-about-item">
+                                    <span class="ngo-about-label"><%= item.label %></span>
+                                    <% if (item.href) { %>
+                                        <a href="<%= item.href %>" target="_blank" class="ngo-about-value ngo-link"><%= item.value %></a>
+                                    <% } else { %>
                                         <strong class="ngo-about-value"><%= item.value %></strong>
-                                    </a>
-                                <% } else { %>
-                                    <div class="ngo-about-item">
-                                        <span class="ngo-about-label"><%= item.label %></span>
-                                        <strong class="ngo-about-value"><%= item.value %></strong>
-                                    </div>
-                                <% } %>
+                                    <% } %>
+                                </div>
                             <% }) %>
                         </div>
                     </section>
 
                     <section class="ngo-card">
                         <div class="ngo-card-header">
-                            <div>
-                                <span class="ngo-card-eyebrow">How this works</span>
-                                <h2 class="ngo-card-title">What you can view here</h2>
-                            </div>
+                            <h2 class="ngo-card-title">Mission</h2>
                         </div>
-
-                        <div class="ngo-insight-list">
-                            <article class="ngo-insight-item">
-                                <strong>Posts</strong>
-                                <p>See every update, campaign, or story published by this NGO.</p>
-                            </article>
-                            <article class="ngo-insight-item">
-                                <strong>Donations</strong>
-                                <p>Review supporter contributions and donation activity.</p>
-                            </article>
-                            <article class="ngo-insight-item">
-                                <strong>Fund raised</strong>
-                                <p>Track the amount collected across live campaigns and drives.</p>
-                            </article>
-                        </div>
+                        <p class="ngo-card-copy"><%= profileSubtitle %></p>
                     </section>
                 </div>
             </article>
         </section>
     </main>
+
+    <% if (locals.isOwner) { %>
+        <div class="ngo-modal-overlay" data-ngo-confirm-modal hidden>
+            <div class="ngo-modal">
+                <h3>Delete Account?</h3>
+                <p>This action is permanent and cannot be undone. All your posts and data will be removed.</p>
+                <div class="ngo-modal-actions">
+                    <button type="button" class="ngo-modal-btn" data-ngo-modal-cancel>Cancel</button>
+                    <button type="button" class="ngo-modal-btn ngo-modal-btn-danger" data-ngo-modal-confirm>Delete Forever</button>
+                </div>
+            </div>
+        </div>
+    <% } %>
 
     <script src="/ngo-profile.js"></script>
 </body>
