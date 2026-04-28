@@ -102,6 +102,12 @@ document.addEventListener('DOMContentLoaded', function() {
             goalAmount: 25000,
             upvotes: 342,
             avatarColor: "avatar-green",
+            paymentAccount: {
+                upiId: 'heartcare@upi',
+                bankName: 'HDFC Bank',
+                accountLast4: '1024',
+                ifsc: 'HDFC0001024',
+            },
             submittedAt: new Date(Date.now() - 86400000).toISOString(),
         },
         {
@@ -115,6 +121,12 @@ document.addEventListener('DOMContentLoaded', function() {
             goalAmount: 20000,
             upvotes: 258,
             avatarColor: "avatar-blue",
+            paymentAccount: {
+                upiId: 'educationfirst@upi',
+                bankName: 'ICICI Bank',
+                accountLast4: '4451',
+                ifsc: 'ICIC0004451',
+            },
             submittedAt: new Date(Date.now() - 172800000).toISOString(),
         },
         {
@@ -128,6 +140,12 @@ document.addEventListener('DOMContentLoaded', function() {
             goalAmount: 50000,
             upvotes: 521,
             avatarColor: "avatar-orange",
+            paymentAccount: {
+                upiId: 'disasterrelief@upi',
+                bankName: 'State Bank of India',
+                accountLast4: '7612',
+                ifsc: 'SBIN0007612',
+            },
             submittedAt: new Date(Date.now() - 259200000).toISOString(),
         },
         {
@@ -141,6 +159,12 @@ document.addEventListener('DOMContentLoaded', function() {
             goalAmount: 15000,
             upvotes: 187,
             avatarColor: "avatar-purple",
+            paymentAccount: {
+                upiId: 'wildlife@upi',
+                bankName: 'Axis Bank',
+                accountLast4: '2309',
+                ifsc: 'UTIB0002309',
+            },
             submittedAt: new Date(Date.now() - 345600000).toISOString(),
         },
         {
@@ -154,6 +178,12 @@ document.addEventListener('DOMContentLoaded', function() {
             goalAmount: 30000,
             upvotes: 445,
             avatarColor: "avatar-red",
+            paymentAccount: {
+                upiId: 'healthcare@upi',
+                bankName: 'Kotak Mahindra Bank',
+                accountLast4: '9091',
+                ifsc: 'KKBK0009091',
+            },
             submittedAt: new Date(Date.now() - 432000000).toISOString(),
         }
     ];
@@ -214,6 +244,45 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function getFeedPosts() {
         return [...userFeedPosts.map(normalizeUserPost), ...demoPosts];
+    }
+
+    function hashString(value) {
+        const source = String(value || 'madadsetu');
+        let hash = 0;
+
+        for (let index = 0; index < source.length; index += 1) {
+            hash = (hash * 31 + source.charCodeAt(index)) >>> 0;
+        }
+
+        return hash;
+    }
+
+    function pickFromList(seed, values) {
+        if (!Array.isArray(values) || values.length === 0) {
+            return null;
+        }
+
+        return values[seed % values.length];
+    }
+
+    function buildNgoPaymentProfile(post) {
+        const ngoName = String(post.ngoName || post.authorName || 'Community Impact').trim() || 'Community Impact';
+        const seed = hashString(ngoName);
+        const fallbackUpi = `${normalizeNgoKey(ngoName)}@madadsetu`;
+        const bankOptions = ['HDFC Bank', 'ICICI Bank', 'State Bank of India', 'Axis Bank', 'Kotak Mahindra Bank'];
+        const bankName = pickFromList(seed, bankOptions) || 'HDFC Bank';
+        const accountLast4 = String(1000 + (seed % 9000));
+
+        return {
+            ngoName,
+            summary: String(post.description || post.title || 'Supporting local communities with urgent care.').trim(),
+            avatarColor: post.avatarColor || getAvatarColor(ngoName),
+            avatarInitials: getAvatarInitials(ngoName),
+            upiId: post.paymentAccount?.upiId || fallbackUpi,
+            bankName: post.paymentAccount?.bankName || bankName,
+            accountLast4: post.paymentAccount?.accountLast4 || accountLast4,
+            ifsc: post.paymentAccount?.ifsc || 'MADAD0001',
+        };
     }
 
     // Function to get avatar initials
@@ -1577,6 +1646,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         updateFeedHeader('posts');
         const posts = getFeedPosts();
+        currentFeedPosts = posts;
         
         postsFeed.innerHTML = posts.map(post => {
             const hasGoal = post.goalAmount > 0;
@@ -1724,9 +1794,7 @@ document.addEventListener('DOMContentLoaded', function() {
             btn.addEventListener('click', function(e) {
                 e.preventDefault();
                 const postId = this.getAttribute('data-post-id');
-                console.log('Donate clicked for post:', postId);
-                // Add your donation logic here
-                alert(`Opening donation modal for post ${postId}`);
+                openDonationModal(postId);
             });
         });
 
@@ -1954,11 +2022,277 @@ document.addEventListener('DOMContentLoaded', function() {
         if (ctaBtn) {
             ctaBtn.addEventListener('click', function(e) {
                 e.preventDefault();
-                console.log('Start Giving button clicked');
-                alert('Redirecting to donation page...');
-                // window.location.href = '/donate';
+                const posts = currentFeedPosts.length ? currentFeedPosts : getFeedPosts();
+                const firstPost = posts[0];
+                if (firstPost) {
+                    openDonationModal(firstPost.id);
+                }
             });
         }
+    }
+
+    const donationModal = document.getElementById('donationModal');
+    const donationModalCloseButtons = Array.from(document.querySelectorAll('[data-donation-close]'));
+    const donationLogo = donationModal ? donationModal.querySelector('[data-donation-logo]') : null;
+    const donationName = donationModal ? donationModal.querySelector('[data-donation-name]') : null;
+    const donationSummary = donationModal ? donationModal.querySelector('[data-donation-summary]') : null;
+    const donationDestination = donationModal ? donationModal.querySelector('[data-donation-destination]') : null;
+    const donationAmountInput = donationModal ? donationModal.querySelector('[data-donation-amount-input]') : null;
+    const donationAmountError = donationModal ? donationModal.querySelector('[data-donation-amount-error]') : null;
+    const donationMethodError = donationModal ? donationModal.querySelector('[data-donation-method-error]') : null;
+    const donationTotal = donationModal ? donationModal.querySelector('[data-donation-total]') : null;
+    const donationAccount = donationModal ? donationModal.querySelector('[data-donation-account]') : null;
+    const donationSubmit = donationModal ? donationModal.querySelector('[data-donation-submit]') : null;
+    const donationSuccess = donationModal ? donationModal.querySelector('[data-donation-success]') : null;
+    const donationPresets = donationModal ? Array.from(donationModal.querySelectorAll('[data-amount]')) : [];
+    const donationTabs = donationModal ? Array.from(donationModal.querySelectorAll('[data-payment-method]')) : [];
+    const donationPanels = donationModal ? Array.from(donationModal.querySelectorAll('[data-payment-panel]')) : [];
+    const donationNgoUpi = donationModal ? donationModal.querySelector('[data-ngo-upi]') : null;
+    const donationUpiId = donationModal ? donationModal.querySelector('[data-upi-id]') : null;
+    const donationNetbankingBank = donationModal ? donationModal.querySelector('[data-netbanking-bank]') : null;
+    const donationNetbankingName = donationModal ? donationModal.querySelector('[data-netbanking-name]') : null;
+    const donationCardNumber = donationModal ? donationModal.querySelector('[data-card-number]') : null;
+    const donationCardName = donationModal ? donationModal.querySelector('[data-card-name]') : null;
+    const donationCardExpiry = donationModal ? donationModal.querySelector('[data-card-expiry]') : null;
+    const donationCardCvv = donationModal ? donationModal.querySelector('[data-card-cvv]') : null;
+    const donationDebitNumber = donationModal ? donationModal.querySelector('[data-debit-number]') : null;
+    const donationDebitName = donationModal ? donationModal.querySelector('[data-debit-name]') : null;
+    const donationDebitExpiry = donationModal ? donationModal.querySelector('[data-debit-expiry]') : null;
+    const donationDebitCvv = donationModal ? donationModal.querySelector('[data-debit-cvv]') : null;
+
+    let currentFeedPosts = [];
+    const donationState = {
+        isOpen: false,
+        selectedPost: null,
+        selectedAmount: 0,
+        selectedMethod: 'upi',
+    };
+
+    function formatInr(amount) {
+        const numericAmount = Number(amount || 0);
+        return `INR ${numericAmount.toLocaleString('en-IN')}`;
+    }
+
+    function resetDonationErrors() {
+        if (donationAmountError) {
+            donationAmountError.textContent = '';
+        }
+        if (donationMethodError) {
+            donationMethodError.textContent = '';
+        }
+    }
+
+    function setSelectedAmount(amount) {
+        const numericAmount = Number(amount || 0);
+        donationState.selectedAmount = Number.isFinite(numericAmount) ? numericAmount : 0;
+        donationPresets.forEach(preset => {
+            const presetAmount = Number(preset.getAttribute('data-amount') || 0);
+            preset.classList.toggle('is-active', presetAmount === donationState.selectedAmount);
+        });
+        if (donationAmountInput) {
+            donationAmountInput.value = donationState.selectedAmount ? String(donationState.selectedAmount) : '';
+        }
+        if (donationTotal) {
+            donationTotal.textContent = formatInr(donationState.selectedAmount);
+        }
+        if (donationSubmit) {
+            donationSubmit.textContent = donationState.selectedAmount
+                ? `Pay ${formatInr(donationState.selectedAmount)}`
+                : 'Pay securely';
+        }
+    }
+
+    function setPaymentMethod(methodKey) {
+        donationState.selectedMethod = methodKey;
+        donationTabs.forEach(tab => {
+            const isActive = tab.getAttribute('data-payment-method') === methodKey;
+            tab.classList.toggle('is-active', isActive);
+            tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        });
+        donationPanels.forEach(panel => {
+            const isActive = panel.getAttribute('data-payment-panel') === methodKey;
+            panel.classList.toggle('is-active', isActive);
+        });
+    }
+
+    function setDonationProfile(post) {
+        const profile = buildNgoPaymentProfile(post || {});
+        donationState.selectedPost = post || null;
+
+        if (donationLogo) {
+            donationLogo.textContent = profile.avatarInitials;
+            donationLogo.className = `donation-ngo-logo ${profile.avatarColor}`;
+        }
+        if (donationName) {
+            donationName.textContent = profile.ngoName;
+        }
+        if (donationSummary) {
+            donationSummary.textContent = profile.summary;
+        }
+        if (donationDestination) {
+            donationDestination.textContent = `Funds go directly to ${profile.ngoName}'s payment account.`;
+        }
+        if (donationAccount) {
+            donationAccount.textContent = `${profile.bankName} · A/C •••• ${profile.accountLast4}`;
+        }
+        if (donationNgoUpi) {
+            donationNgoUpi.value = profile.upiId;
+        }
+    }
+
+    function openDonationModal(postId) {
+        if (!donationModal) {
+            return;
+        }
+
+        const posts = currentFeedPosts.length ? currentFeedPosts : getFeedPosts();
+        const post = posts.find(item => String(item.id) === String(postId));
+        if (!post) {
+            return;
+        }
+
+        setDonationProfile(post);
+        setSelectedAmount(0);
+        setPaymentMethod('upi');
+        resetDonationErrors();
+
+        if (donationSuccess) {
+            donationSuccess.hidden = true;
+        }
+
+        donationModal.classList.add('is-open');
+        donationModal.setAttribute('aria-hidden', 'false');
+        donationState.isOpen = true;
+
+        if (donationAmountInput) {
+            donationAmountInput.focus();
+        }
+    }
+
+    function closeDonationModal() {
+        if (!donationModal) {
+            return;
+        }
+
+        donationModal.classList.remove('is-open');
+        donationModal.setAttribute('aria-hidden', 'true');
+        donationState.isOpen = false;
+    }
+
+    function validateDonation() {
+        resetDonationErrors();
+
+        if (!donationState.selectedAmount || donationState.selectedAmount <= 0) {
+            if (donationAmountError) {
+                donationAmountError.textContent = 'Enter a valid donation amount.';
+            }
+            return false;
+        }
+
+        if (donationState.selectedMethod === 'upi') {
+            const upiValue = String(donationUpiId?.value || '').trim();
+            if (!upiValue || !upiValue.includes('@')) {
+                if (donationMethodError) {
+                    donationMethodError.textContent = 'Enter a valid UPI ID.';
+                }
+                return false;
+            }
+        }
+
+        if (donationState.selectedMethod === 'netbanking') {
+            const bankValue = String(donationNetbankingBank?.value || '').trim();
+            const nameValue = String(donationNetbankingName?.value || '').trim();
+            if (!bankValue || !nameValue) {
+                if (donationMethodError) {
+                    donationMethodError.textContent = 'Select a bank and enter the account holder name.';
+                }
+                return false;
+            }
+        }
+
+        if (donationState.selectedMethod === 'credit') {
+            const cardNumber = String(donationCardNumber?.value || '').replace(/\s+/g, '');
+            const cardName = String(donationCardName?.value || '').trim();
+            const expiry = String(donationCardExpiry?.value || '').trim();
+            const cvv = String(donationCardCvv?.value || '').trim();
+            if (cardNumber.length < 13 || !cardName || !/\d{2}\/\d{2}/.test(expiry) || cvv.length < 3) {
+                if (donationMethodError) {
+                    donationMethodError.textContent = 'Enter valid credit card details.';
+                }
+                return false;
+            }
+        }
+
+        if (donationState.selectedMethod === 'debit') {
+            const cardNumber = String(donationDebitNumber?.value || '').replace(/\s+/g, '');
+            const cardName = String(donationDebitName?.value || '').trim();
+            const expiry = String(donationDebitExpiry?.value || '').trim();
+            const cvv = String(donationDebitCvv?.value || '').trim();
+            if (cardNumber.length < 13 || !cardName || !/\d{2}\/\d{2}/.test(expiry) || cvv.length < 3) {
+                if (donationMethodError) {
+                    donationMethodError.textContent = 'Enter valid debit card details.';
+                }
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    function handleDonationSubmit() {
+        if (!validateDonation()) {
+            return;
+        }
+
+        if (donationSuccess) {
+            donationSuccess.hidden = false;
+        }
+    }
+
+    if (donationModal) {
+        donationModalCloseButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                closeDonationModal();
+            });
+        });
+
+        donationPresets.forEach(preset => {
+            preset.addEventListener('click', function() {
+                const amount = Number(this.getAttribute('data-amount') || 0);
+                setSelectedAmount(amount);
+                resetDonationErrors();
+            });
+        });
+
+        if (donationAmountInput) {
+            donationAmountInput.addEventListener('input', function() {
+                const amountValue = Number(this.value || 0);
+                setSelectedAmount(amountValue);
+                resetDonationErrors();
+            });
+        }
+
+        donationTabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                const methodKey = this.getAttribute('data-payment-method');
+                if (methodKey) {
+                    setPaymentMethod(methodKey);
+                    resetDonationErrors();
+                }
+            });
+        });
+
+        if (donationSubmit) {
+            donationSubmit.addEventListener('click', function() {
+                handleDonationSubmit();
+            });
+        }
+
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape' && donationState.isOpen) {
+                closeDonationModal();
+            }
+        });
     }
 
     function setFeedMode(feedMode) {

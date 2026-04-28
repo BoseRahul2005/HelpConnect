@@ -326,6 +326,150 @@
         </aside>
     </div>
 
+    <div class="donation-modal" id="donationModal" aria-hidden="true">
+        <div class="donation-modal-backdrop" data-donation-close></div>
+        <div class="donation-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="donationModalTitle">
+            <button class="donation-modal-close" type="button" aria-label="Close donation panel" data-donation-close>
+                <span aria-hidden="true">&times;</span>
+            </button>
+            <div class="donation-modal-header">
+                <p class="donation-modal-eyebrow">Secure donation</p>
+                <h2 class="donation-modal-title" id="donationModalTitle">Donate to this NGO</h2>
+            </div>
+            <div class="donation-modal-body">
+                <section class="donation-ngo">
+                    <div class="donation-ngo-logo" data-donation-logo>NG</div>
+                    <div class="donation-ngo-copy">
+                        <h3 class="donation-ngo-name" data-donation-name>NGO Name</h3>
+                        <p class="donation-ngo-summary" data-donation-summary>Mission summary goes here.</p>
+                        <p class="donation-ngo-destination" data-donation-destination>Funds go directly to the NGO account.</p>
+                    </div>
+                </section>
+
+                <section class="donation-amount">
+                    <div class="donation-section-title">
+                        <h4>Choose amount</h4>
+                        <span class="donation-amount-hint">INR</span>
+                    </div>
+                    <div class="donation-amount-presets" data-donation-presets>
+                        <button class="donation-amount-chip" type="button" data-amount="500">500</button>
+                        <button class="donation-amount-chip" type="button" data-amount="1000">1000</button>
+                        <button class="donation-amount-chip" type="button" data-amount="2500">2500</button>
+                        <button class="donation-amount-chip" type="button" data-amount="5000">5000</button>
+                    </div>
+                    <label class="donation-field">
+                        <span>Custom amount</span>
+                        <input type="number" min="1" inputmode="numeric" class="donation-input" data-donation-amount-input placeholder="Enter amount" />
+                    </label>
+                    <p class="donation-error" data-donation-amount-error></p>
+                </section>
+
+                <section class="donation-methods">
+                    <div class="donation-section-title">
+                        <h4>Select payment method</h4>
+                        <span class="donation-amount-hint">100% secure</span>
+                    </div>
+                    <div class="donation-method-tabs" role="tablist">
+                        <button class="donation-method-tab is-active" type="button" role="tab" data-payment-method="upi">UPI</button>
+                        <button class="donation-method-tab" type="button" role="tab" data-payment-method="netbanking">Net Banking</button>
+                        <button class="donation-method-tab" type="button" role="tab" data-payment-method="credit">Credit Card</button>
+                        <button class="donation-method-tab" type="button" role="tab" data-payment-method="debit">Debit Card</button>
+                    </div>
+                    <div class="donation-method-panels">
+                        <div class="donation-method-panel is-active" data-payment-panel="upi">
+                            <p class="donation-panel-caption">Pay directly to the NGO UPI handle shown below.</p>
+                            <div class="donation-field">
+                                <span>NGO UPI ID</span>
+                                <input class="donation-input" type="text" data-ngo-upi readonly />
+                            </div>
+                            <label class="donation-field">
+                                <span>Your UPI ID</span>
+                                <input class="donation-input" type="text" data-upi-id placeholder="you@upi" />
+                            </label>
+                        </div>
+                        <div class="donation-method-panel" data-payment-panel="netbanking">
+                            <p class="donation-panel-caption">Select your bank and confirm the account holder details.</p>
+                            <label class="donation-field">
+                                <span>Select bank</span>
+                                <select class="donation-input" data-netbanking-bank>
+                                    <option value="">Choose a bank</option>
+                                    <option value="HDFC">HDFC Bank</option>
+                                    <option value="ICICI">ICICI Bank</option>
+                                    <option value="SBI">State Bank of India</option>
+                                    <option value="AXIS">Axis Bank</option>
+                                </select>
+                            </label>
+                            <label class="donation-field">
+                                <span>Account holder name</span>
+                                <input class="donation-input" type="text" data-netbanking-name placeholder="Full name" />
+                            </label>
+                        </div>
+                        <div class="donation-method-panel" data-payment-panel="credit">
+                            <p class="donation-panel-caption">Enter your credit card details securely.</p>
+                            <label class="donation-field">
+                                <span>Card number</span>
+                                <input class="donation-input" type="text" inputmode="numeric" data-card-number placeholder="1234 5678 9012 3456" />
+                            </label>
+                            <label class="donation-field">
+                                <span>Name on card</span>
+                                <input class="donation-input" type="text" data-card-name placeholder="Name as on card" />
+                            </label>
+                            <div class="donation-field-row">
+                                <label class="donation-field">
+                                    <span>Expiry</span>
+                                    <input class="donation-input" type="text" data-card-expiry placeholder="MM/YY" />
+                                </label>
+                                <label class="donation-field">
+                                    <span>CVV</span>
+                                    <input class="donation-input" type="password" inputmode="numeric" data-card-cvv placeholder="***" />
+                                </label>
+                            </div>
+                        </div>
+                        <div class="donation-method-panel" data-payment-panel="debit">
+                            <p class="donation-panel-caption">Debit cards are processed securely through the NGO account.</p>
+                            <label class="donation-field">
+                                <span>Card number</span>
+                                <input class="donation-input" type="text" inputmode="numeric" data-debit-number placeholder="1234 5678 9012 3456" />
+                            </label>
+                            <label class="donation-field">
+                                <span>Name on card</span>
+                                <input class="donation-input" type="text" data-debit-name placeholder="Name as on card" />
+                            </label>
+                            <div class="donation-field-row">
+                                <label class="donation-field">
+                                    <span>Expiry</span>
+                                    <input class="donation-input" type="text" data-debit-expiry placeholder="MM/YY" />
+                                </label>
+                                <label class="donation-field">
+                                    <span>CVV</span>
+                                    <input class="donation-input" type="password" inputmode="numeric" data-debit-cvv placeholder="***" />
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="donation-error" data-donation-method-error></p>
+                </section>
+
+                <section class="donation-summary">
+                    <div>
+                        <p class="donation-summary-label">Donation total</p>
+                        <p class="donation-summary-value" data-donation-total>INR 0</p>
+                    </div>
+                    <div>
+                        <p class="donation-summary-label">Destination</p>
+                        <p class="donation-summary-value" data-donation-account>NGO account</p>
+                    </div>
+                </section>
+
+                <button class="donation-submit" type="button" data-donation-submit>Pay securely</button>
+                <div class="donation-success" role="status" aria-live="polite" data-donation-success hidden>
+                    <strong>Payment successful.</strong>
+                    <p>Your donation has been sent to the NGO account. A confirmation receipt is on the way.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script id="home-bootstrap-data" type="application/json"><%- JSON.stringify({
         pageMode: safePageMode,
         searchQuery: safeSearchQuery,

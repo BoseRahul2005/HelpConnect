@@ -146,6 +146,7 @@ function normalizeNgoRow(row) {
         orgType: row.org_type,
         website: row.website,
         foundedOn: row.founded_on,
+        category: row.category || 'community-development',
         passwordHash: row.password_hash,
         passwordSalt: row.password_salt,
         termsAccepted: Boolean(row.terms_accepted),
@@ -422,9 +423,9 @@ async function createNgoAccount(ngoObject) {
     const password = String(ngoObject.password || '').trim();
     const termsAccepted = Boolean(ngoObject.termsAccepted);
 
-    const [duplicates] = await execute('SELECT id FROM ngo_users WHERE email = ? OR phone = ? LIMIT 1', [email, phone]);
+    const duplicates = await execute('SELECT id FROM ngo_users WHERE email = $1 OR phone = $2 LIMIT 1', [email, phone]);
 
-    if (duplicates.length) {
+    if (duplicates.rows.length) {
         const duplicateError = new Error('NGO_ACCOUNT_EXISTS');
         duplicateError.code = 'NGO_ACCOUNT_EXISTS';
         throw duplicateError;
@@ -432,7 +433,7 @@ async function createNgoAccount(ngoObject) {
 
     const { hash, salt } = hashPassword(password);
 
-    const [result] = await execute(
+    const result = await execute(
         `INSERT INTO ngo_users (
             org_name,
             email,
@@ -450,7 +451,7 @@ async function createNgoAccount(ngoObject) {
             saved_items,
             upvoted,
             history
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) RETURNING id`,
         [
             orgName,
             email,
@@ -460,59 +461,59 @@ async function createNgoAccount(ngoObject) {
             foundedOn,
             hash,
             salt,
-            termsAccepted ? 1 : 0,
-            JSON.stringify([]),
-            JSON.stringify([]),
-            JSON.stringify([]),
-            JSON.stringify([]),
-            JSON.stringify([]),
-            JSON.stringify([]),
-            JSON.stringify([]),
+            termsAccepted,
+            '[]',
+            '[]',
+            '[]',
+            '[]',
+            '[]',
+            '[]',
+            '[]',
         ]
     );
 
-    return getNgoById(result.insertId);
+    return getNgoById(result.rows[0].id);
 }
 
 async function authenticateNgo(emailOrMobile, password) {
     const lookupValue = String(emailOrMobile || '').trim();
 
-    const [rows] = await execute('SELECT * FROM ngo_users WHERE email = ? OR phone = ? LIMIT 1', [lookupValue, lookupValue]);
-    const ngo = rows[0];
+    const result = await execute('SELECT * FROM ngo_users WHERE email = $1 OR phone = $2 LIMIT 1', [lookupValue, lookupValue]);
+    const ngo = result.rows[0];
 
     if (!ngo || !verifyPassword(password, ngo.password_salt, ngo.password_hash)) {
         return null;
     }
 
-    await execute('UPDATE ngo_users SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?', [ngo.id]);
+    await execute('UPDATE ngo_users SET last_login_at = CURRENT_TIMESTAMP WHERE id = $1', [ngo.id]);
     return normalizeNgoRow(ngo);
 }
 
 async function getSingleUserById(id) {
-    const [rows] = await execute('SELECT * FROM single_users WHERE id = ? LIMIT 1', [id]);
-    return normalizeSingleUserRow(rows[0]);
+    const result = await execute('SELECT * FROM single_users WHERE id = $1 LIMIT 1', [id]);
+    return normalizeSingleUserRow(result.rows[0]);
 }
 
 async function getSingleUserByUsername(username) {
-    const [rows] = await execute('SELECT * FROM single_users WHERE username = ? LIMIT 1', [username]);
-    return normalizeSingleUserRow(rows[0]);
+    const result = await execute('SELECT * FROM single_users WHERE username = $1 LIMIT 1', [username]);
+    return normalizeSingleUserRow(result.rows[0]);
 }
 
 async function getSingleUserPostById(id) {
-    const [rows] = await execute('SELECT * FROM single_user_posts WHERE id = ? LIMIT 1', [id]);
-    return normalizeSingleUserPostRow(rows[0]);
+    const result = await execute('SELECT * FROM single_user_posts WHERE id = $1 LIMIT 1', [id]);
+    return normalizeSingleUserPostRow(result.rows[0]);
 }
 
 async function listSingleUsers() {
-    const [rows] = await query('SELECT * FROM single_users ORDER BY submitted_at DESC');
-    return rows.map(normalizeSingleUserRow);
+    const result = await query('SELECT * FROM single_users ORDER BY submitted_at DESC');
+    return result.rows.map(normalizeSingleUserRow);
 }
 
 async function listSingleUsersForSearch() {
-    const [rows] = await query(
+    const result = await query(
         `SELECT id, name, username, profile_picture_path, submitted_at FROM single_users ORDER BY submitted_at DESC`
     );
-    return rows.map((row) => ({
+    return result.rows.map((row) => ({
         id: row.id,
         name: row.name,
         username: row.username,
@@ -522,12 +523,12 @@ async function listSingleUsersForSearch() {
 }
 
 async function listSingleUserPosts(userId) {
-    const [rows] = await execute(
-        'SELECT * FROM single_user_posts WHERE user_id = ? ORDER BY submitted_at DESC, id DESC',
+    const result = await execute(
+        'SELECT * FROM single_user_posts WHERE user_id = $1 ORDER BY submitted_at DESC, id DESC',
         [userId]
     );
 
-    return rows.map(normalizeSingleUserPostRow);
+    return result.rows.map(normalizeSingleUserPostRow);
 }
 
 async function updateSingleUserProfilePicture(userId, profilePicturePath, profilePictureName) {
@@ -539,18 +540,18 @@ async function updateSingleUserProfilePicture(userId, profilePicturePath, profil
         return false;
     }
 
-    const [result] = await execute(
-        'UPDATE single_users SET profile_picture_path = ?, profile_picture_name = ? WHERE id = ? LIMIT 1',
+    const result = await execute(
+        'UPDATE single_users SET profile_picture_path = $1, profile_picture_name = $2 WHERE id = $3',
         [normalizedProfilePicturePath, normalizedProfilePictureName, normalizedUserId]
     );
 
-    return result.affectedRows > 0;
+    return result.rowCount > 0;
 }
 
 async function listRecentSingleUserFeedPosts(limit = 12) {
     const normalizedLimit = Number.isInteger(limit) && limit > 0 ? limit : 12;
 
-    const [rows] = await execute(
+    const result = await execute(
         `SELECT
             p.*,
             u.name AS user_name,
@@ -558,14 +559,15 @@ async function listRecentSingleUserFeedPosts(limit = 12) {
         FROM single_user_posts p
         INNER JOIN single_users u ON u.id = p.user_id
         ORDER BY p.submitted_at DESC, p.id DESC
-        LIMIT ${normalizedLimit}`
+        LIMIT $1`,
+        [normalizedLimit]
     );
 
-    return rows.map(normalizeSingleUserFeedPostRow);
+    return result.rows.map(normalizeSingleUserFeedPostRow);
 }
 
 async function listAllSingleUserFeedPosts() {
-    const [rows] = await execute(
+    const result = await execute(
         `SELECT
             p.*,
             u.name AS user_name,
@@ -575,23 +577,23 @@ async function listAllSingleUserFeedPosts() {
         ORDER BY p.submitted_at DESC, p.id DESC`
     );
 
-    return rows.map(normalizeSingleUserFeedPostRow);
+    return result.rows.map(normalizeSingleUserFeedPostRow);
 }
 
 async function getSingleUserFeedPostById(id) {
-    const [rows] = await execute(
+    const result = await execute(
         `SELECT
             p.*,
             u.name AS user_name,
             u.username AS user_username
         FROM single_user_posts p
         INNER JOIN single_users u ON u.id = p.user_id
-        WHERE p.id = ?
+        WHERE p.id = $1
         LIMIT 1`,
         [id]
     );
 
-    return normalizeSingleUserFeedPostRow(rows[0]);
+    return normalizeSingleUserFeedPostRow(result.rows[0]);
 }
 
 async function createSingleUserPost(postObject) {
@@ -623,7 +625,7 @@ async function createSingleUserPost(postObject) {
         throw invalidGoalError;
     }
 
-    const [result] = await execute(
+    const result = await execute(
         `INSERT INTO single_user_posts (
             user_id,
             title,
@@ -632,19 +634,19 @@ async function createSingleUserPost(postObject) {
             image_name,
             is_fundraiser,
             fund_raise_goal
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
         [
             userId,
             title,
             body,
             imagePath,
             imageName,
-            isFundraiser ? 1 : 0,
+            isFundraiser,
             isFundraiser ? fundRaiseGoal : null,
         ]
     );
 
-    return getSingleUserPostById(result.insertId);
+    return getSingleUserPostById(result.rows[0].id);
 }
 
 async function deleteSingleUserPost(userId, postId) {
@@ -659,12 +661,12 @@ async function deleteSingleUserPost(userId, postId) {
         return false;
     }
 
-    const [result] = await execute(
-        'DELETE FROM single_user_posts WHERE id = ? AND user_id = ? LIMIT 1',
+    const result = await execute(
+        'DELETE FROM single_user_posts WHERE id = $1 AND user_id = $2',
         [normalizedPostId, normalizedUserId]
     );
 
-    return result.affectedRows > 0;
+    return result.rowCount > 0;
 }
 
 async function deleteNgoAccount(ngoId) {
@@ -674,9 +676,9 @@ async function deleteNgoAccount(ngoId) {
         return false;
     }
 
-    const [result] = await execute('DELETE FROM ngo_users WHERE id = ? LIMIT 1', [normalizedNgoId]);
+    const result = await execute('DELETE FROM ngo_users WHERE id = $1', [normalizedNgoId]);
 
-    return result.affectedRows > 0;
+    return result.rowCount > 0;
 }
 
 async function deleteSingleUserAccount(userId) {
@@ -686,9 +688,9 @@ async function deleteSingleUserAccount(userId) {
         return false;
     }
 
-    const [result] = await execute('DELETE FROM single_users WHERE id = ? LIMIT 1', [normalizedUserId]);
+    const result = await execute('DELETE FROM single_users WHERE id = $1', [normalizedUserId]);
 
-    return result.affectedRows > 0;
+    return result.rowCount > 0;
 }
 
 async function createSingleUserAccount(userObject) {
@@ -698,12 +700,12 @@ async function createSingleUserAccount(userObject) {
     const password = String(userObject.password || '').trim();
     const birthday = String(userObject.birthday || '').trim();
 
-    const [duplicates] = await execute(
-        'SELECT id FROM single_users WHERE username = ? OR email_or_mobile = ? LIMIT 1',
+    const duplicates = await execute(
+        'SELECT id FROM single_users WHERE username = $1 OR email_or_mobile = $2 LIMIT 1',
         [username, emailOrMobile]
     );
 
-    if (duplicates.length) {
+    if (duplicates.rows.length) {
         const duplicateError = new Error('SINGLE_USER_EXISTS');
         duplicateError.code = 'SINGLE_USER_EXISTS';
         throw duplicateError;
@@ -711,7 +713,7 @@ async function createSingleUserAccount(userObject) {
 
     const { hash, salt } = hashPassword(password);
 
-    const [result] = await execute(
+    const result = await execute(
         `INSERT INTO single_users (
             name,
             username,
@@ -719,27 +721,27 @@ async function createSingleUserAccount(userObject) {
             password_hash,
             password_salt,
             birthday
-        ) VALUES (?, ?, ?, ?, ?, ?)`,
+        ) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
         [name, username, emailOrMobile, hash, salt, birthday]
     );
 
-    return getSingleUserById(result.insertId);
+    return getSingleUserById(result.rows[0].id);
 }
 
 async function authenticateSingleUser(emailOrMobile, password) {
     const lookupValue = String(emailOrMobile || '').trim();
 
-    const [rows] = await execute(
-        'SELECT * FROM single_users WHERE email_or_mobile = ? OR username = ? LIMIT 1',
+    const result = await execute(
+        'SELECT * FROM single_users WHERE email_or_mobile = $1 OR username = $2 LIMIT 1',
         [lookupValue, lookupValue]
     );
-    const user = rows[0];
+    const user = result.rows[0];
 
     if (!user || !verifyPassword(password, user.password_salt, user.password_hash)) {
         return null;
     }
 
-    await execute('UPDATE single_users SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?', [user.id]);
+    await execute('UPDATE single_users SET last_login_at = CURRENT_TIMESTAMP WHERE id = $1', [user.id]);
     return normalizeSingleUserRow(user);
 }
 

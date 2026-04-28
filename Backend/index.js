@@ -242,6 +242,19 @@ async function safeListNgoAccounts() {
     }
 }
 
+async function safeListNgoAccountsByCategory(categoryKey) {
+    if (!shouldUseDatabase) {
+        return [];
+    }
+
+    try {
+        return await madadsetuDb.listNgoAccountsByCategory(categoryKey);
+    } catch (error) {
+        console.error('Unable to load NGO accounts for category:', error);
+        return [];
+    }
+}
+
 async function safeListSingleUserPosts(userId) {
     if (!shouldUseDatabase) {
         return [];
@@ -1665,7 +1678,7 @@ app.get('/category/:categoryKey', async (req, res) => {
         }
 
         // Get NGOs filtered by category
-        const allNgos = await madadsetuDb.listNgoAccountsByCategory(categoryKey);
+        const allNgos = await safeListNgoAccountsByCategory(categoryKey);
         console.log('📌 Total NGOs for category', categoryKey, ':', allNgos?.length || 0);
 
         const sanitizedNgos = Array.isArray(allNgos) 
