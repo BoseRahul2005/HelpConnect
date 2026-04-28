@@ -1279,7 +1279,7 @@ async function renderNgoProfilePage(req, res) {
         return res.redirect('/ngo/login');
     }
 
-    return res.render('profile-page', buildNgoProfileViewModel(ngo));
+    return res.render('ngo-profile', buildPublicNgoProfileViewModel(ngo, ngo.orgName));
 }
 
 async function renderPublicNgoProfilePage(req, res) {
