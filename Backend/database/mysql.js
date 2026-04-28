@@ -5,10 +5,10 @@ const mysql = require('mysql2/promise');
 const crypto = require('crypto');
 
 const connectionConfig = {
-    host: process.env.MYSQL_HOST || 'localhost',
-    user: process.env.MYSQL_USER || 'root',
-    password: process.env.MYSQL_PASSWORD || '',
-    database: process.env.MYSQL_DATABASE || 'MadadSetu',
+    host: process.env.MYSQL_HOST ,
+    user: process.env.MYSQL_USER ,
+    password: process.env.MYSQL_PASSWORD ,
+    database: process.env.MYSQL_DATABASE,
     port: Number(process.env.MYSQL_PORT || 3306),
     connectTimeout: Number(process.env.MYSQL_CONNECT_TIMEOUT || 5000),
     waitForConnections: true,
@@ -83,6 +83,10 @@ CREATE TABLE IF NOT EXISTS single_user_posts (
     user_id BIGINT UNSIGNED NOT NULL,
     title VARCHAR(160) NOT NULL DEFAULT '',
     body TEXT NOT NULL,
+    image_path VARCHAR(255) DEFAULT NULL,
+    image_name VARCHAR(255) DEFAULT NULL,
+    is_fundraiser TINYINT(1) NOT NULL DEFAULT 0,
+    fund_raise_goal DECIMAL(12,2) DEFAULT NULL,
     submitted_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
@@ -246,7 +250,7 @@ async function ensureDatabase() {
             const ngoColumns = new Set(ngoColumnRows.map((row) => row.COLUMN_NAME));
 
             if (!ngoColumns.has('category')) {
-                await appPool.query('ALTER TABLE ngo_users ADD COLUMN category VARCHAR(50) DEFAULT "community-development" AFTER org_type');
+                await appPool.query('ALTER TABLE ngo_users ADD COLUMN category VARCHAR(50) DEFAULT \'community-development\' AFTER org_type');
             }
 
             if (!ngoColumns.has('profile_picture_path')) {
@@ -267,7 +271,7 @@ async function ensureDatabase() {
 
             // Migrate existing NGOs with NULL or empty category values
             const [ngoWithoutCategory] = await appPool.query(
-                'SELECT id FROM ngo_users WHERE category IS NULL OR category = "" ORDER BY id'
+                'SELECT id FROM ngo_users WHERE category IS NULL OR category = \'\' ORDER BY id'
             );
             
             if (ngoWithoutCategory.length > 0) {
